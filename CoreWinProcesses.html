@@ -1,0 +1,292 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Core Win Processes</title>
+<meta name="description" content="Win Processes">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+  <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Core Win Processes</h3>
+    <p><i>Programmi usati:</i> Process Explorer (ufficiale), Process Hacker (più completo, voti scarsi su VirusTotal)</p>
+</header>
+
+
+    
+        <div class="tools-container">
+        <a href="#system"  class="button-link">System</a>
+        <a href="#smss" class="button-link ">smss.exe</a>
+        <a href="#csrss"  class="button-link">csrss.exe</a>
+        <a href="#wininit"  class="button-link">wininit.exe</a>
+        <a href="#services"  class="button-link">services.exe</a>              
+        <a href="#svchost"  class="button-link">svchost.exe</a>
+        <a href="#lsass"  class="button-link">lsass.exe</a>
+        <a href="#winlogon"  class="button-link">winlogon.exe</a>
+        <a href="#explorer"  class="button-link">explorer.exe</a>
+        </div>
+        
+    
+<div class="sub-container">
+    <h3 id="system">System</h3>
+
+<p><strong>Image Path:</strong> C:\Windows\System32\ntoskrnl.exe</p>
+
+<p><strong>Descrizione / Funzione (IT):</strong><br>
+Il processo <strong>System (PID 4)</strong> ospita thread di sistema che operano esclusivamente in <strong>kernel mode</strong>. 
+Esegue codice del kernel Windows e dei driver caricati. 
+Non dispone di uno spazio di indirizzamento <strong>user-mode</strong>.
+</p>
+
+<p><strong>What is normal?</strong></p>
+<ul>
+  <li><strong>Image Path:</strong> N/A</li>
+  <li><strong>Parent Process:</strong> None</li>
+  <li><strong>Number of Instances:</strong> One</li>
+  <li><strong>User Account:</strong> Local System</li>
+  <li><strong>Start Time:</strong> At boot time</li>
+</ul>
+
+<p><strong>What is unusual behaviour for this process?</strong></p>
+<ul>
+  <li>A parent process (aside from System Idle Process (0))</li>
+  <li>Multiple instances of System. (Should only be one instance)</li>
+  <li>A different PID. (Remember that the PID will always be PID 4)</li>
+  <li>Not running in Session 0</li>
+</ul>
+
+<hr>
+
+<h3 id="smss">System > smss.exe</h3>
+
+<p><strong>Image Path:</strong> C:\Windows\System32\smss.exe</p>
+
+<p><strong>Descrizione / Funzione (IT):</strong><br>
+<strong>Session Manager Subsystem.</strong> È il primo processo in <strong>user-mode</strong> avviato dal kernel.
+Crea le sessioni, inizializza variabili d’ambiente, paging file e avvia 
+<strong>csrss.exe</strong> e <strong>winlogon.exe</strong>, quindi si auto-termina.
+</p>
+
+<p><em>(Nel testo originale non è presente una sezione esplicita “What is normal / unusual”)</em></p>
+
+<hr>
+
+<h3 id="csrss">csrss.exe</h3>
+
+<p><strong>Image Path:</strong> %SystemRoot%\System32\csrss.exe</p>
+
+<p><strong>Descrizione / Funzione (IT):</strong><br>
+<strong>Client Server Runtime Process.</strong> È la componente <strong>user-mode</strong> del sottosistema Windows.
+Gestisce finestre console, creazione e terminazione di processi e thread e lo <strong>shutdown</strong> del sistema.
+</p>
+
+<p><strong>What is normal?</strong></p>
+<ul>
+  <li><strong>Image Path:</strong> %SystemRoot%\System32\csrss.exe</li>
+  <li><strong>Parent Process:</strong> Created by an instance of smss.exe</li>
+  <li><strong>Number of Instances:</strong> Two or more</li>
+  <li><strong>User Account:</strong> Local System</li>
+  <li><strong>Start Time:</strong> Within seconds of boot time for the first two instances</li>
+</ul>
+
+<p><strong>What is unusual?</strong></p>
+<ul>
+  <li>An actual parent process. (smss.exe calls this process and self-terminates)</li>
+  <li>Image file path other than C:\Windows\System32</li>
+  <li>Subtle misspellings to hide rogue processes masquerading as csrss.exe in plain sight</li>
+  <li>The user is not the SYSTEM user.</li>
+</ul>
+
+<hr>
+
+<h3 id="wininit">wininit.exe </h3>
+
+<p><strong>Image Path:</strong> %SystemRoot%\System32\wininit.exe</p>
+
+<p><strong>Descrizione / Funzione (IT):</strong><br>
+<strong>Windows Initialization Process.</strong> Avvia <strong>services.exe</strong>, 
+<strong>lsass.exe</strong> e <strong>lsaiso.exe</strong> nella <strong>Sessione 0</strong>.
+Processo critico del sistema operativo.
+</p>
+
+<p><strong>What is normal?</strong></p>
+<ul>
+  <li><strong>Image Path:</strong> %SystemRoot%\System32\wininit.exe</li>
+  <li><strong>Parent Process:</strong> Created by an instance of smss.exe</li>
+  <li><strong>Number of Instances:</strong> One</li>
+  <li><strong>User Account:</strong> Local System</li>
+  <li><strong>Start Time:</strong> Within seconds of boot time</li>
+</ul>
+
+<p><strong>What is unusual?</strong></p>
+<ul>
+  <li>An actual parent process. (smss.exe calls this process and self-terminates)</li>
+  <li>Image file path other than C:\Windows\System32</li>
+  <li>Subtle misspellings to hide rogue processes in plain sight</li>
+  <li>Multiple running instances</li>
+  <li>Not running as SYSTEM</li>
+</ul>
+
+<hr>
+
+<h3 id="services">winit.exe > services.exe</h3>
+
+<p><strong>Image Path:</strong> %SystemRoot%\System32\services.exe</p>
+
+<p><strong>Descrizione / Funzione (IT):</strong><br>
+<strong>Service Control Manager.</strong> Gestisce i servizi Windows, carica driver auto-start
+e mantiene il database dei servizi nel registro. È <strong>parent</strong> di <strong>svchost.exe</strong>.
+</p>
+
+<p><strong>What is normal?</strong></p>
+<ul>
+  <li><strong>Image Path:</strong> %SystemRoot%\System32\services.exe</li>
+  <li><strong>Parent Process:</strong> wininit.exe</li>
+  <li><strong>Number of Instances:</strong> One</li>
+  <li><strong>User Account:</strong> Local System</li>
+  <li><strong>Start Time:</strong> Within seconds of boot time</li>
+</ul>
+
+<p><strong>What is unusual?</strong></p>
+<ul>
+  <li>A parent process other than wininit.exe</li>
+  <li>Image file path other than C:\Windows\System32</li>
+  <li>Subtle misspellings to hide rogue processes in plain sight</li>
+  <li>Multiple running instances</li>
+  <li>Not running as SYSTEM</li>
+</ul>
+
+<hr>
+
+<h3 id="svchost">wininit.exe > services.exe > svchost.exe</h3>
+
+<p><strong>Image Path:</strong> %SystemRoot%\System32\svchost.exe</p>
+
+<p><strong>Descrizione / Funzione (IT):</strong><br>
+<strong>Service Host</strong> per servizi Windows basati su DLL. 
+I servizi sono definiti nel registro e avviati tramite il parametro <strong>-k</strong> per il grouping.
+</p>
+<p><i>The Binary Path is listed:</i> Also, notice how it is structured. There is a key identifier in the binary path, and that identifier is -k . This is how a legitimate svchost.exe process is called. 
+The -k parameter is for grouping similar services to share the same process. This concept was based on the OS design and implemented to reduce resource consumption. Starting from Windows 10 Version 1703, services grouped into host processes changed. On machines running more than 3.5 GB of memory, each service will run its own process
+<b>Note:</b> Since svchost.exe will always have multiple running processes on any Windows system, this process has been a target for malicious use. Adversaries create malware to masquerade as this process and try to hide amongst the legitimate svchost.exe processes. They can name the malware svchost.exe or misspell it slightly, such as scvhost.exe. By doing so, the intention is to go under the radar. Another tactic is to install/call a malicious service (DLL).  
+</p>
+
+<p><strong>What is normal?</strong></p>
+<ul>
+  <li><strong>Image Path:</strong> %SystemRoot%\System32\svchost.exe</li>
+  <li><strong>Parent Process:</strong> services.exe</li>
+  <li><strong>Number of Instances:</strong> Many</li>
+  <li><strong>User Account:</strong> Varies (SYSTEM, Network Service, Local Service)</li>
+  <li><strong>Start Time:</strong> Typically within seconds of boot time</li>
+</ul>
+
+<p><strong>What is unusual?</strong></p>
+<ul>
+  <li>A parent process other than services.exe</li>
+  <li>Image file path other than C:\Windows\System32</li>
+  <li>Subtle misspellings to hide rogue processes in plain sight</li>
+  <li>The absence of the -k parameter</li>
+</ul>
+
+<hr>
+
+<h3 id="lsass">lsass.exe</h3>
+
+<p><strong>Image Path:</strong> %SystemRoot%\System32\lsass.exe</p>
+
+<p><strong>Descrizione / Funzione (IT):</strong><br>
+<strong>Local Security Authority Subsystem Service.</strong> Gestisce autenticazione,
+credenziali, token di sicurezza e log di sicurezza.
+</p>
+
+<p><strong>What is normal?</strong></p>
+<ul>
+  <li><strong>Image Path:</strong> %SystemRoot%\System32\lsass.exe</li>
+  <li><strong>Parent Process:</strong> wininit.exe</li>
+  <li><strong>Number of Instances:</strong> One</li>
+  <li><strong>User Account:</strong> Local System</li>
+  <li><strong>Start Time:</strong> Within seconds of boot time</li>
+</ul>
+
+<p><strong>What is unusual?</strong></p>
+<ul>
+  <li>A parent process other than wininit.exe</li>
+  <li>Image file path other than C:\Windows\System32</li>
+  <li>Subtle misspellings to hide rogue processes in plain sight</li>
+  <li>Multiple running instances</li>
+  <li>Not running as SYSTEM</li>
+</ul>
+
+<hr>
+
+<h3 id="winlogon">winlogon.exe</h3>
+
+<p><strong>Image Path:</strong> %SystemRoot%\System32\winlogon.exe</p>
+
+<p><strong>Descrizione / Funzione (IT):</strong><br>
+Gestisce la <strong>Secure Attention Sequence (CTRL+ALT+DELETE)</strong>, il login,
+il caricamento del profilo utente e il blocco schermo.
+</p>
+
+<p><strong>What is normal?</strong></p>
+<ul>
+  <li><strong>Image Path:</strong> %SystemRoot%\System32\winlogon.exe</li>
+  <li><strong>Parent Process:</strong> Created by an instance of smss.exe that exits</li>
+  <li><strong>Number of Instances:</strong> One or more</li>
+  <li><strong>User Account:</strong> Local System</li>
+  <li><strong>Start Time:</strong> Within seconds of boot time</li>
+</ul>
+
+<p><strong>What is unusual?</strong></p>
+<ul>
+  <li>An actual parent process. (smss.exe calls this process and self-terminates)</li>
+  <li>Image file path other than C:\Windows\System32</li>
+  <li>Subtle misspellings to hide rogue processes in plain sight</li>
+  <li>Not running as SYSTEM</li>
+  <li>Shell value in the registry other than explorer.exe</li>
+</ul>
+
+<hr>
+
+<h3 id="explorer">explorer.exe</h3>
+
+<p><strong>Image Path:</strong> %SystemRoot%\explorer.exe</p>
+
+<p><strong>Descrizione / Funzione (IT):</strong><br>
+Fornisce l’interfaccia grafica di Windows: <strong>desktop</strong>, <strong>taskbar</strong>,
+<strong>menu Start</strong> e gestione file.
+</p>
+
+<p><strong>What is normal?</strong></p>
+<ul>
+  <li><strong>Image Path:</strong> %SystemRoot%\explorer.exe</li>
+  <li><strong>Parent Process:</strong> Created by userinit.exe and exits</li>
+  <li><strong>Number of Instances:</strong> One or more per interactively logged-in user</li>
+  <li><strong>User Account:</strong> Logged-in user(s)</li>
+  <li><strong>Start Time:</strong> First instance when the first interactive user logon session begins</li>
+</ul>
+
+<p><strong>What is unusual?</strong></p>
+<ul>
+  <li>An actual parent process. (userinit.exe calls this process and exits)</li>
+  <li>Image file path other than C:\Windows</li>
+  <li>Running as an unknown user</li>
+  <li>Subtle misspellings to hide rogue processes in plain sight</li>
+  <li>Outbound TCP/IP connections</li>
+</ul>
+
+
+</div>
+
+</body>
+</html>
+
+
+

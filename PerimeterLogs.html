@@ -1,0 +1,77 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Perimeter Logs</title>
+<meta name="description" content="Permeter Logs">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Perimeter Logs</h3>
+</header>
+
+<!-- First and Second step -->
+<div class="flex-container">
+    <div class="step-container">
+        <h2>First step: <i>Abbiamo 3 logs</i></h2>
+        <ul>
+            <li><b>Firewall Logs</b> </li>
+            <li><b>WAF Logs</b> </li>
+            <li><b>VPN Logs</b> </li>            
+        </ul>
+        <h2>Second step: <i>Manual Log Analysis</i></h2>
+        <ul>
+            <li><code>head firewall.log</code> </li>
+            <li><code>head ids_alerts.log</code> </li>
+            <li><code>head vpn_auth.log</code> </li>            
+        </ul>
+        <h2>Third step: <i>Reconnaissance attempt</i></h2>
+        <ul>
+            <li><code>cat firewall.log | grep "BLOCK" | head</code> - Examining the blocked requests indicates that an external IP has been found probing against internal IPs using various ports (22,23,21,445,3389). </li>
+            <li><code>cat firewall.log | grep "BLOCK" | cut -d' ' -f5 | cut -d: -f1 | sort -nr | uniq -c</code> - We have identified a suspicious IP, which we can use to pivot, examine other log files, and understand the correlation. </li>
+            <li><code>cat firewall.log | grep [REDACTED] | grep "ALLOW"</code> - It seems that the attacker was able to gain access to the internal network through exploitation. Let's examine the VPN logs and see if we can find further footprints of the attack.</li>            
+        </ul>
+        <h2>Fourth step: <i>VPN Brute-force / Credential Access</i></h2>
+        <ul>
+            <li><code>cat vpn_auth.log | grep FAIL | cut -d' ' -f3 | sort -nr | uniq -c</code> - In the VPN Logs, let's first examine the number of failed attempts; we can clearly see that the suspicious IP has multiple failed VPN login attempts.</li>
+            <li><code>cat vpn_auth.log | grep [REDACTED]</code> -  the multiple login attempt was made against a certain user svc_REDACTED, followed by a success login, resulting in the attacker being assigned a local IP address. We will pick the first assigned IP and extend our analysis to look for traces in the log files. </li>            
+        </ul>
+        <h2>Fifth step: <i>Lateral Movement</i></h2>
+        <p>By now, it is confirmed that, that attacker has successfully gained the initial access and got hold on to an internal IP address. Let's filter through the firewall logs and see if we can find the footprints of any lateral movement from the compromised host IP REDACTED</p>
+        <ul>
+            <li><code>cat firewall.log | grep [REDACTED] | grep "ALLOW" | head  </code> -  the compromised IP is probing internal machines on various ports on three main ports SMB/RDP/SSH (445/3389/22).</li>            
+            <li><code>cat ids_alerts.log | grep [REDACTED] | head  </code> -  Let's now pivot to ids_alerts logs, and filter through the compromised IP and see if we can find any intrusion rules triggered. It seems, the compromised host is trying to exploit various vulnerabilities against the services mentioned above on those hosts. </li>            
+            <li><code>cat ids_alerts.log | grep -n [REDACTED] | grep 'SMB' | cut -d' ' -f6,7,8,9,10,19,21 | head </code> -   the compromised host was able to exploit SMB service and was able to achieve lateral movement.</li>            
+        </ul>
+
+    </div>
+
+    <div class="step-container">
+        <h2>Sixth step: <i>C2 Beaconing</i></h2>
+        <p>Now that, we have an evidence of the lateral movement of the attacker. Let's hunt for any indicator of C2 communication. If we look at the IDS alerts, we can find a specific alert related to C2 Beaconing, indicating possible C2 communication. Let's use the following search query to see the results:</p>
+        <ul>
+            <li><code>cat ids_alerts.log | grep C2 | head </code> -  It clearly confims our suspicion against one of the internal compromised host.</li>            
+            <li><code>cat ids_alerts.log | grep -n [REDACTED]   | cut -d' ' -f6,7,8,9,10,19,22,23 | head -n 15 </code> -  the infected host is further performing susicious activities. </li>            
+            <li><code>cat ids_alerts.log | grep -n [REDACTED] | cut -d' ' -f6,7,8,9,10,19,22,23 | uniq -c | sort -nr | head </code> -   Above analysis clearly indicates that our internal network is fully compromised, and we now have the external IP address acting as a C2 server, recieving the C2 beacons from our compromised host.</li>            
+        </ul>
+        <h2>Seventh step: <i>Data Exfiltration Attempt</i></h2>
+        <p>Now that, we have identified the C2 communication and examined other alerts as well against suspicious Is, let's now investigate, if there are any indicators of data being exfiltrated out of our network. We will apply filter on the compromised hosts, and examine the traffic originating from those to an external destination IP:</p>
+        <ul>
+            <li><code>cat firewall.log | grep [REDACTED]  | cut -d' ' -f5,6,7  |   uniq  | sort</code> - The output clearly shows, the compromised host REDACTED is sending extensive amound of traffic on external IP address. We can also filter on IDS logs, to see the alerts being triggered on these activities from the internal IP.</li>                        
+        </ul>
+        
+    </div>
+</div>
+
+</body>
+</html>

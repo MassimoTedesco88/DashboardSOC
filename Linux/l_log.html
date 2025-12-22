@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Linux Log Analysis</title>
+<meta name="description" content="Linux">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="../Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="../dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Wireframe iframe -->
+<div class="dashboard">
+    <iframe src="../LinuxCMD.html" title="linuxCMD"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Good for Log Analysis</h3>
+</header>
+      
+<div class="sub-container">    
+        <div class="flex-container">
+        <div class="step-container">
+            <h2>cut</h2>
+            <ul>
+                <li><b>primo carattere di ogni linea</b> <code>cut -c1 file.txt</code> </li>
+                <li><b>primo, secondo, quarto di ogni linea</b> <code>cut -c1,2,4 file.txt</code> </li>
+                <li><b>dal primo sino al terzo carattere di ogni linea</b> <code>cut -c1-3 file.txt</code> </li>
+                <li><b>byte size</b> <code>cut -b1-3 file.txt</code> </li>
+                <li><b>sesto field (-f) con delimitatore(-d) : </b> <code>cut -d: -f6 file.txt</code> </li>
+                              
+            </ul>
+            <h2>grep</h2>
+                <ul>
+                <li><b>Case insensitive</b> <code>grep -i</code></li>                        
+                <li><b>Esclude linee con " x " </b> <code>grep -v "x"</code></li>    
+                <li><b>Ricerca attraversa directory</b> <code>grep -r 'main' /etc/ </code></li>    
+            </ul>  
+            <h2>sort</h2>
+                <ul>
+                <li><b>Sort numericamente</b> <code>sort -N file.txt </code></li>                        
+                <li><b>Rimuovi duplicati</b> <code>sort -U file.txt </code></li>                            
+                <li><b>Sort reverse</b> <code>sort -R file.txt </code></li>                        
+            </ul>  
+            <h2>uniq</h2>
+                <ul>
+                <li><b>Conta ogni linea</b> <code>uniq -c </code></li>                        
+            </ul>  
+            <h2>wc</h2>     
+                <ul>
+                <li><b>Conta linee</b> <code>wc -l</code></li>                        
+                <li><b>Conta parole</b> <code>wc -w</code></li>                        
+                <li><b>Conta caratteri</b> <code>wc -c</code></li>                        
+            </ul>             
+        </div>
+        <div class="step-container">
+            <h2>awk</h2>
+            <ul>
+                <li><b>Primo campo($) di ogni linea</b> <code>awk '{print $1}' file.txt</code></li>                        
+                <li><b>Elenca solo quelli con lunghezza caratteri > 15</b> <code>awk 'length($0)>15' file.txt</code></li>                        
+                <li><b>Cerca tra le righe Jerry</b> <code>awk '/Jerry/{print}' file.txt</code></li>                        
+            </ul>          
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

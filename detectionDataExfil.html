@@ -1,0 +1,182 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Detection DataExfil</title>
+<meta name="description" content="detection">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Data Exfiltration Detection</h3>
+</header>
+
+<!-- First and Second step -->
+ <div class="links">
+    <p><b>Data exfiltration</b> is the unauthorized transfer of sensitive data from a computer or other device. It's a primary objective for attackers who have breached a network. </p>
+        <a href="#dns"  class="button-link" title="dns">DNS</a>
+        <a href="#ftp"   class="button-link" title="ftp">FTP</a>
+        <a href="#http"  class="button-link" title="http">HTTP</a>
+        <a href="#icmp"  class="button-link" title="icmp">ICMP</a>
+    </div>
+<div class="flex-container">
+    
+    
+    <div class="step-container">
+        <h2 id="dns">Data Exfil through DNS Tunneling</h2>
+        <p>DNS exfiltration abuses the Domain Name System, a protocol normally allowed through networks, to smuggle bytes encoded inside DNS queries/responses so firewalls and web proxies don't notice. Because DNS is typically allowed and often unfiltered or forwarded to public resolvers, it's attractive for covert channels.</p>
+        <ul>
+            <li><b>DNS Tunneling</b> 
+                <ul>
+                    <li>DNS (Domain Name System) translates human-friendly domain names (e.g., example.com) into IP addresses and provides other record types (A, AAAA, TXT, MX, CNAME, etc.)
+                        <ul>
+                            <li>DNS queries are ubiquitous: almost every host performs DNS lookups.</li>
+                            <li>DNS is normally allowed through firewalls and gateways, making it an attractive covert channel.</li>
+                            <li>DNS uses UDP (mostly) on port 53 for queries and responses; TCP is used for zone transfers or large responses.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li><b>Indicators of attack </b>
+                <ul>
+                    <li>Many DNS queries are sent to a single external domain, especially with very high counts compared to the baseline.</li>
+                    <li>Long subdomain labels or unusually long full query names (> 60–100 characters).</li>
+                    <li>High entropy or Base32/Base64-like patterns in the query name (lots of mixed case letters, digits, -, = signs for base64).</li>
+                    <li>Rare record types (TXT, NULL) or many large TXT responses.</li>
+                    <li>Unusual response behavior: frequent NXDOMAIN (if attacker uses exfil-by-query without answering), or TCP/large UDP fragments for DNS.</li>
+                    <li>Queries at regular intervals (beaconing behaviour).</li>
+                </ul>
+            </li>
+            <li><b>Detecting through Wireshark</b>
+            <ul>
+                <li><code>dns</code> Let's start by applying filter on dns traffic</li>
+                <li><code>dns.flags.response == 0</code> Let's filter on the DNS queries with no response</li>
+                <li><code>dns && frame.len > 70</code> Find long queries (suspicious subdomain lengths)</li>
+                <li><code>dns && dns.qry.name contains <NomeInventato></code> Let's filter on the suspicious domain
+                <ul><p>Looks like we have successfully identified the DNS tunneling attempt:</p>
+                    <li>Multiple internal hosts are compromised.</li>
+                    <li>All these hosts are sending the data in chunks using DNS tunneling techniques.</li>
+                    <li>There is only one external domain identified as the one receiving the DNS queries.</li>
+                </ul></li>
+            </ul> </li>            
+        </ul>
+        <h2 id="ftp">Data Exfil through FTP</h2>
+        <p>FTP (File Transfer Protocol) is one of the oldest protocols for transferring files between a client and server over a TCP/IP network. Attackers use it to move large amounts of data off a network, sometimes via compromised credentials, misconfigured servers, or ephemeral accounts. Detection relies on a mix of packet inspection (FTP only), server logs, SSH session metadata, and network flow/size/pattern analysis.</p>
+        <ul>
+            <li><b>How adversaries use FTP for exfiltration</b>
+                <ul>
+                    <li>Use legitimate FTP servers (public or misconfigured internal servers) to stage/transfer data.</li>
+                    <li>Use compromised credentials (service accounts, user creds).</li>
+                    <li>Use non-standard ports or tunneling to blend with other traffic.</li>                    
+                </ul>
+            </li>
+            <li><b>Indicators of attack </b>
+                <ul>
+                    <li>USER and PASS commands (cleartext credentials).</li>
+                    <li>STOR (upload) and RETR (download) commands: repeated or large transfers.</li>
+                    <li>Large data connections to unusual external IPs, especially outside business hours.</li>
+                    <li>Data channel openings on ephemeral ports (PASV) paired with large payloads.</li>
+                </ul>
+            </li>
+            <li><b>Detecting through Wireshark</b>
+                <ul>
+                    <li><code>ftp || ftp-data</code> - Isolate FTP control & data</li>
+                    <li><code>ftp.request.command == "USER" || ftp.request.command == "PASS"</code> - Let's filter to show only login attempts with USER/PASS</li>
+                    <li><code>ftp contains "STOR"</code> - Look for Anomalies in Filenames or Credentials, <b>Right-click a packet → Follow → TCP Stream</b></li>
+                    <li><code>ftp contains "csv"</code> - We can look at suspicious files by filtering on the file extensions like PDF, csv, TXT etc</li>
+                    <li><code>ftp && frame.len > 90</code> - Identifying the traffic with a large payload size and <b>check out the content in TCP Stream</b></li>
+                </ul>
+            
+            </li>            
+        </ul>      
+
+    </div>
+
+    <div class="step-container">
+        <h2 id="http">Data Exfil via HTTP</h2>
+        <p>Data exfiltration via HTTP is when an attacker moves sensitive data out of a target network using HTTP as the transport. HTTP is commonly abused because it blends with normal web traffic, can traverse firewalls and proxies, and can be obfuscated (encoding, encryption, tunneling). </p>
+        <ul>                     
+            <li><b>How adversaries use HTTP for data exfiltration </b>
+                <ul>
+                    <li>POST uploads to external servers: Bulk data is sent to attacker-controlled hosts or cloud storage in POST request bodies.</li>
+                    <li>GET requests with encoded data: Attacker squeezes small chunks into query strings or path segments (useful for low-and-slow exfiltration).</li>
+                    <li>Use of common services / CDN: Exfiltration disguised as uploads to popular services or attacker-controlled subdomains under reputable domains.</li>
+                    <li>Custom headers: Data placed in headers (e.g., X-Data: <base64>) may bypass some string-based DLP.</li>
+                    <li>Chunked transfer / multipart: Large payloads split into multiple requests to avoid size thresholds.</li>
+                    <li>HTTPS/TLS tunneling: The encrypted channel hides the payload; detection requires TLS inspection, SNI analysis, or metadata-based detection.</li>
+                    <li>Staging via cloud services: The attacker uploads to Dropbox/GitHub/Gist and then fetches externally.</li>
+                </ul>
+            </li>            
+            <li><b>Indicators of Attack (IoAs)</b>
+                <ul>
+                    <li>Unusually large HTTP POST requests to external/unexpected hosts.</li>
+                    <li>HTTP requests to domains with low reputation / rarely seen in baseline traffic.</li>
+                    <li>Frequent small requests (beaconing) to the same host, followed by large uploads.</li>
+                    <li>Chunked or multipart transfers where multiple requests compose a larger file.</li>
+                </ul>
+            </li>            
+            <li><b>Network Traffic Analysis</b>
+                <ul>
+                    <li><code>http</code> - Apply a filter on the HTTP traffic </li>
+                    <li><code>http.request.method == "POST"</code> - We can see HTTP traffic with both GET and POST requests </li>
+                    <li><code>http.request.method == "POST" and frame.len > 500</code> - Filter on the traffic with the frame length of more than 500 or 750 </li>
+                    <li>Let's go to the HTTP stream to see the file's content</li>
+                </ul>
+            </li>   
+        </ul>
+        <h2 id="icmp">Data Exfiltration via ICMP</h2>
+        <p>ICMP is a network-layer protocol used for diagnostics and control (e.g., ping, TTL exceeded). Because it is commonly allowed through firewalls and typically inspected less strictly than TCP/UDP, attackers sometimes abuse ICMP to tunnel and exfiltrate data. Malicious actors encode data into ICMP payloads (echo request/reply, timestamp, info) and send it to a remote listener under their control.</p>
+        <ul>                     
+            <li><b>How adversaries use ICMP for exfiltration</b>
+                <ul>
+                    <li><b>Common techniques:</b>
+                        <ul>
+                            <li>ICMP echo (type 8) / reply (type 0) tunneling: attackers place encoded (base64, hex) chunks of files inside ICMP payloads. The remote server collects and decodes them.</li>
+                            <li>Custom ICMP types/codes: using uncommon ICMP types or non-zero codes to avoid signature-based detections.</li>
+                            <li>Fragmentation and reassembly: large payloads are split across multiple packets.</li>
+                            <li>Encryption/obfuscation: Encrypting or encrypting payloads (base64 is common) to look like random data.</li>
+                        </ul>
+                    </li>
+                    <li><b>Indicators that something may be malicious:</b>
+                        <ul>
+                            <li>Persistent ICMP sessions to an external host not used for legitimate monitoring.</li>
+                            <li>Unusually large ICMP payloads or frequent ICMP with payload > typical ping size.</li>
+                            <li>ICMP payloads that contain high-entropy data or patterns consistent with base64/hex.</li>
+                            <li>Bursts of ICMP are immediately followed by no other legitimate application traffic from the same host.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>            
+            <li><b>Indicators of attack in Wireshark</b>
+                <ul>
+                    <li>ICMP packet volumes: a single host sending many ICMP echo requests to an external IP.</li>
+                    <li>Large frame.len or icmp.payload: pings with payloads much larger than typical (e.g., > 64 bytes). </li>
+                    <li>ICMP type/code unusual values: e.g., unusual use of timestamp(13/14) or custom codes.</li>
+                    <li>Regular timing (periodicity): evenly spaced ICMP packets carrying similar-sized payloads.</li>
+                    <li>Fragments with reassembly: multiple ICMP fragments from the same src/dst pair.</li>
+                </ul>
+            </li>            
+            <li><b>Wireshark</b>
+            <ul>
+                <li><code>icmp</code> - The filter below isolates all ICMP packets</li>
+                <li><code>icmp.type == 8</code> - Let's apply the filter to isolate ICMP Echo Request packets</li>
+                <li><code>icmp.type == 8 and frame.len > 100</code> - Let's now apply the filter on the ICMP requests and focus on the frame length over 100, Flags packets with unusually large payloads. Normal pings are ~74 bytes total. Anything over 100 is suspicious.</li>
+                <li>ICMP is simple, and any anomaly can be detected easily by examining the frame size and investigating the larger payload size than usual.</li>
+
+            </ul></li>   
+        </ul>
+        
+    </div>
+</div>
+
+</body>
+</html>

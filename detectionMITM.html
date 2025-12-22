@@ -1,0 +1,148 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Detection MITM</title>
+<meta name="description" content="detection">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Man-in-the-Middle Detection</h3>
+</header>
+<div class="links">
+    <p><b>Man-in-the-middle (MITM)</b> attacks represent one of the most insidious threats in network security. In these attacks, attackers position themselves between legitimate communication endpoints to intercept, modify, or redirect traffic. From a blue team perspective, detecting these attacks requires a multi-layered approach combining network monitoring, certificate validation, and behavioral analysis.  </p>
+        <a href="#arp"  class="button-link" title="arp">ARP Spoofing</a>
+        <a href="#dns"   class="button-link" title="dns">DNS Spoofing</a>
+        <a href="#ssl"  class="button-link" title="ssl">SSL Stripping</a>
+        
+    </div>
+<!-- First and Second step -->
+<div class="flex-container">
+    <div class="step-container">
+        <h2 id="arp">Detecting ARP Spoofing</h2>
+        <p><b>ARP (Address Resolution Protocol)</b> maps IP addresses to MAC addresses in a local network. When a device wants to send data to another IP, it first asks: "Who has this IP?” The correct device replies with its MAC address.</p>
+        <p>In <b>ARP spoofing</b>, an attacker sends fake ARP replies to trick devices into associating the attacker’s MAC address with a legitimate IP, usually the default gateway. This allows the attacker to intercept, modify, or redirect traffic.</p>
+        <ul>
+            <li><b>Why ARP Spoofing Works</b> 
+            <ul>
+                <li>ARP has <i>no authentication</i>. Any device can send unsolicited is-at messages. An attacker exploits this vulnerability by sending fake ARP replies to victims and gateways:
+                    <ul>
+                        <li>Example: 192.16.10.100 is at 02:fe:BB:cd:55:55 attacker claims to be the gateway.</li>
+                        <li>Results:
+                            <ul>
+                                <li>The Victim's ARP cache becomes poisoned.</li>
+                                <li>All traffic intended for the gateway flows through the attacker first (MITM).</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul></li>
+            <li><b>Indicators of the Attack</b>
+                <ul>
+                    <li>Duplicate MAC-to-IP Mappings: Multiple MAC addresses claiming the same IP address. Indicates impersonation.</li>
+                    <li>Unsolicited ARP Replies: High number of ARP replies without matching requests ("<b>gratuitous ARP</b>").</li>
+                    <li>Abnormal ARP Traffic Volume: A Large number of ARP packets in short intervals.</li>
+                    <li>Unusual Traffic Routing: Traffic rerouted through the attacker’s MAC.</li>
+                    <li>Gateway Redirection Patterns: Multiple destination MACs for the same gateway IP.</li>
+                    <li>ARP Probe / Reply Loops: Many ARP requests with Who has 192.168.1.x? Tell 192.168.1.y patterns.</li>
+                </ul> </li>
+            <li><b>Network Traffic Analysis</b> 
+                <ul>
+                    <li><code>arp</code> - You’ll see requests and replies (who-has and is-at) pointing to both ARP requests and responses. We can examine the results for any abnormal and repeated requests or responses.
+<b>Important Note:</b><i> Press CTRL + ALT + 1 to fix the time displayed. </i></li>
+                    <li><code>arp.opcode == 1</code> - This shows all the ARP requests captured from different hosts.</li>
+                    <li><code>arp.opcode == 2 </code> - Forged ARP poisoning typically uses unsolicited is-at replies (gratuitous/unasked replies). These are strong indicators. Let's look at the ARP response</li>
+                    <li><code>arp.isgratuitous</code> - A suspicious host sends many unsolicited (gratuitous) ARP replies, especially to multiple destinations. Repeated gratuitous ARPs can indicate an attacker maintaining their poison state.</li>
+                    <li><b>ARP traffic associated with the Gateway</b>
+                    <ul>
+                        <li><code>arp && arp.src.proto_ipv4 == 192.168.10.1 && eth.src == 02:aa:bb:cc:00:01</code> - We have the information about the IP and the MAC address associated with the gateway. Let's apply the following filter to examine the ARP traffic associated with the gateway </li>
+                        <li><code>arp.opcode == 2 && arp.src.proto_ipv4 == 192.168.10.1</code> - we can see some ARP replies pointing the Gateway's IP to the suspicious MAC address. The frequency of these ARP replies indicates that this is indeed an ARP spoofing. </li>
+                        <li><code>arp.opcode ==2 && _ws.col.info contains "192.168.10.1 is at"</code> - Confirm the same result (come il filtro precedente) </li>                        
+                    </ul></li>
+                    <li><b>Examining the suspicious MAC address</b>
+                    <ul>
+                        <li><code>arp.opcode == 2 && arp.src.proto_ipv4 == 192.168.10.1 && eth.src == 02:fe[REDACTED]</code> - The result clearly confirms that the attacker spoofs ARP </li>
+                        <li><code>arp.duplicate-address-detected || arp.duplicate-address-frame</code> - This result indicates that the attacker successfully performed ARP spoofing and positioned himself between the victim and the gateway.</li>
+                    </ul></li>
+                </ul>
+            </li>            
+        </ul>
+        <h2 id="dns">Unmasking DNS Spoofing</h2>
+        <p><b>DNS Spoofing (or DNS Cache Poisoning)</b> è una tecnica di attacco informatico che mira a ingannare il sistema DNS per reindirizzare gli utenti verso siti falsi o controllati dall’attaccante, invece che verso quelli legittimi. Il DNS cache poisoning avviene quando un attaccante riesce a inserire informazioni DNS false nella cache di un server DNS.</p>
+        <ul>
+            <li><b>How it works</b>
+            <ul>
+                <li>The Victim tries to visit their bank at my-real-bank.com.</li>
+                <li>The Attacker, who is already on the local network (perhaps via ARP spoofing), intercepts the victim's DNS query.</li>
+                <li>The Spoof: The attacker quickly sends a fake DNS response to the victim. This fake response says, my-real-bank.com is at my IP address</li>
+                <li>The Interception: The victim's computer trusts this fake response and saves it in its DNS cache. When the victim tries to connect to their bank, they unknowingly connect directly to the attacker's server, which might host a perfect replica of the real banking site.</li>
+                <li>The attacker is now in the middle, capturing everything the victim types, including their username and password.</li>
+            </ul> </li>
+            <li><b>Indicators of the Attack</b>
+            <ul>
+                <li>Multiple DNS responses for the same query: A legitimate resolver and a forged responder reply to the same query. This is the single most reliable indicator.</li>
+                <li>DNS response from an unexpected source: A DNS reply arrives from an IP address that does not match any configured resolver (like 8.8.8.8 or your DNS server).</li>
+                <li>Suspiciously short TTL (Time-To-Live) values: Attackers use very low TTLs (1 - 30s) to keep poisoned entries short-lived and reassert control.</li>
+                <li>Unsolicited DNS responses: A DNS reply appears without a corresponding DNS request from the victim.</li>
+            </ul> </li>
+            <li><b>Network Traffic Analysis</b> 
+            <ul>
+                <li><code>dns</code> - This will allow us to inspect requests/replies and notice abnormal volume or patterns.</li>
+                <li><code>dns.flags.response == 1 && ip.src == 8.8.8.8</code> - Legitimate DNS servers (like Google’s 8.8.8.8) respond from a known external IP address. By filtering responses from this IP, we can see what normal answers look like for comparison.</li>
+                <li><code>dns.flags.response==1</code> - we can hunt for responses from IP addresses other than the usual DNS server</li>
+                <li><code>dns && dns.qry.name == "corp-login.esempio-corp.local"</code> - Let's now take a curious look at the DNS traffic for our domain of interest</li>
+                <li><code>dns.flags.response == 1 && ip.src == 8.8.8.8 && dns.qry.name == "corp-login.esempio-corp.local"</code> - The output also looks very much normal, as expected.  </li>
+                <li><code>dns.flags.response == 1 && ip.src != 8.8.8.8 && dns.qry.name == "corp-login.esempio-corp.local"</code> - This is what DNS spoofing looks like. It shows a system within the network acts as a rogue DNS server, sending spoofed DNS responses.</li>                
+            </ul></li>            
+        </ul>
+        
+    </div>
+
+    <div class="step-container">
+        <h2 id="ssl">Spotting SSL Stripping in Action</h2>
+        <p>SSL stripping is a man-in-the-middle technique in which an attacker intercepts and modifies traffic to remove or prevent TLS encryption between a client and a server. This causes the client to communicate over HTTP instead of HTTPS. The attacker retains a secure (HTTPS) session with the server while relaying plain HTTP to the victim, enabling eavesdropping and credential capture.</p>
+        <ul>
+            <li><b>How It Works</b>
+                <li>The victim initiates an HTTPS request to a website.</li>
+                <li>The attacker intercepts the request using ARP spoofing or a rogue access point.</li>
+                <li>The attacker connects to the website over HTTPS but relays the response to the victim through HTTP.</li>
+                <li>The victim unknowingly interacts over HTTP, exposing sensitive data in plaintext.</li>
+            </li>            
+            <li><b>Indicators of SSL stripping</b>
+                <ul>
+                    <li>Initial Request vs. Response: The user's initial request may be for HTTPS (port 443), but the subsequent packets immediately shift to unencrypted HTTP (port 80) for the same domain.</li>
+                    <li>Redirects/Link Rewriting: Monitoring for redirects (HTTP Status Codes 301, 302) that persistently direct an HTTPS request to an HTTP resource.</li>
+                    <li>Certificate Errors: Although the attacker usually tries to hide this, the initial TLS/SSL Handshake may fail or display a self-signed certificate if the attacker uses a more direct proxying technique.</li>
+                </ul>
+            </li>            
+            <li><b>Network Traffic Analysis</b>
+                <ul>
+                    <li><code> tls || ssl</code> - We start by isolating it using the following filter. This will allow us to inspect SSL requests and notice abnormal volumes or patterns.  </li>
+                    <li><code>tls.handshake.type == 1 && tls.handshake.extensions_server_name == "corp-login.esempio-corp.local"</code> - Let's apply the following filter to show the established TLS handshakes to our server, which proves the site normally uses TLS for communication. </li>
+                    <li><code> dns.flags.response == 1 && ip.src == 192.168.10.55 && dns.qry.name == "corp-login.esempio-corp.local"</code> - Let's isolate DNS responses from the attacker to show the victim was pointed to the attacker's IP"</li>
+                    <li><code>http && ip.src == 192.168.10.10 && ip.dst == 192.168.10.55</code> - One of the main indicators of SSL stripping is that, after the spoof, the domain no longer performs TLS handshakes to the legitimate server, which validates the absence of TLS traffic from the victim to the real server. Let's apply the following filter on the server IP and the attacker IP </li>
+                    <li>We can also identify the user's credentials in plaintext, which confirms that the attacker was able to obtain the victim's credentials. Though there are other SSL stripping indicators as well that we should be looking at. In this scenario, we only observed one indicator, where HTTPS traffic of our portal was stripped down to HTTP.</li>
+                </ul>
+            </li>            
+        </ul>
+        <h3>Summary:</h3>
+        <ol>
+            <li>ARP Spoofing (cache poisoning)</li>
+            <li>DNS Spoofing (forged DNS responses)</li>
+            <li>SSL Stripping (TLS downgrade / credential capture)</li>
+        </ol>
+    </div>
+</div>
+
+</body>
+</html>

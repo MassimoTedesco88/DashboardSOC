@@ -1,0 +1,106 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Wireshark Filters</title>
+<meta name="description" content="Wireshark">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="../Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="../dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Wireframe iframe -->
+<div class="dashboard">
+    <iframe src="../LinuxCMD.html" title="linuxCMD"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Identifying Hosts: DHCP, NetBIOS and Kerberos</h3>
+</header>
+      
+<div class="sub-container">
+    <p>When investigating a <span class="mark1">compromise or malware infection activity</span>, a security analyst should know how to identify the hosts on the network apart from IP to MAC address match. One of the best methods is identifying the hosts and users on the network to decide the investigation's starting point and <span class="mark2">list the hosts and users associated with the malicious traffic/activity.</span>
+    Protocols that can be used in Host and User identification:</p>
+    <ul>
+        <li>Dynamic Host Configuration Protocol (DHCP) traffic</li>
+        <li>NetBIOS (NBNS) traffic </li>
+        <li>Kerberos traffic</li>
+    </ul>
+    <div class="flex-container">
+        <div class="step-container">
+            <h3>DHCP Analysis</h3>
+            <p>DHCP protocol, or Dynamic Host Configuration Protocol (DHCP), is the technology responsible for managing automatic IP address and required communication parameters assignment.</p>
+            <ul>
+                <li><b>Global search:</b> <code>dhcp</code> or <code>bootp</code></li>
+                <li>Filtering the proper DHCP packet options is vital to finding an event of interest. 
+                    <ul><li><b>DHCP Request packets contain the hostname information</b> <code> dhcp.option.dhcp == 3</code></li>
+                        <li><b>DHCP ACK packets represent the accepted requests</b> <code> dhcp.option.dhcp == 5</code></li>
+                        <li><b>DHCP NAK packets represent denied requests</b> <code> dhcp.option.dhcp == 6</code></li>
+                    </ul>
+                </li>
+                <li><b>Note:</b> Due to the nature of the protocol, only "Option 53" ( request type) has predefined static values. You should filter the packet type first, and then you can filter the rest of the options by "applying as column" or use the advanced filters like "contains" and "matches".</li>
+                <li><b>DHCP Request options for grabbing the low-hanging fruits:</b>  <code>dhcp.option.hostname contains "keyword"</code>
+                    <ul>
+                        <li>Option 12:Hostname.</li>
+                        <li>Option 50:Requested IP address.</li>
+                        <li>Option 51:Requested IP lease time.</li>
+                        <li>Option 61:Client's MAC address.</li>
+                    </ul>
+                </li>
+                <li><b>DHCP ACK options for grabbing the low-hanging fruits:</b><code> dhcp.option.domain_name contains "keyword" </code>
+                    <ul>
+                        <li>Option 15:Domain name.</li>
+                        <li>Option 51:Assigned IP lease time.</li>
+                    </ul>
+                </li>
+                <li><b>DHCP NAK options for grabbing the low-hanging fruits:</b> As the message could be unique according to the case/situation, It is suggested to read the message instead of filtering it. Thus, the analyst could create a more reliable hypothesis/result by understanding the event circumstances.
+                    <ul>
+                        <li>Option 56:Message (rejection details/reason)</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="step-container">
+            <h3>NetBIOS (NBNS) Analysis</h3>
+            <p>NetBIOS or Network Basic Input/Output System is the technology responsible for allowing applications on different hosts to communicate with each other.</p>
+            <ul>
+                <li><b>Global search :</b> <code>nbns</code></li>
+                <li><b>NBNS options for grabbing the low-hanging fruits:</b> <code> nbns.name contains "keyword"</code></li>
+                <li>Queries:Query details. <span class="notePiccole">(Query details could contain "name, Time to live (TTL) and IP address details")</span></li>                
+            </ul>
+
+            <h3>Kerberos Analysis</h3>
+            <p>Kerberos is the default authentication service for Microsoft Windows domains. It is responsible for authenticating service requests between two or more computers over the untrusted network. The ultimate aim is to prove identity securely.</p>
+            <ul>
+                <li><b>Global search:</b> <code>kerberos</code></li>
+                <li><b>User account search:</b>
+                    <ul>
+                        <li><code> kerberos.CNameString contains "keyword" </code></li>
+                        <li><code>kerberos.CNameString and !(kerberos.CNameString contains "$" )</code></li>                        
+                    </ul></li>
+                <li>Note: Some packets could provide hostname information in this field. To avoid this confusion, filter the "$"value.<b> The values end with"$"are hostnames</b>, and the ones without it are user names.</li>
+                <li><b>Kerberos options for grabbing the low-hanging fruits:</b>
+                    <ul>
+                        <li><code>kerberos.pvno == 5</code></li>
+                        <li><code>kerberos.realm contains ".org" </code></li>                        
+                        <li><code>kerberos.SNameString == "krbtg"</code></li>
+                    </ul></li>
+                <li>pvno:Protocol version.</li>
+                <li>realm:Domain name for the generated ticket.</li>
+                <li>sname:Service and domain name for the generated ticket.</li>
+                <li>addresses:Client IP address and NetBIOS name.</li>
+                <li>Note: the "addresses" information is only available in request packets.</li>
+                <li><b>Registration requests: </b><code>nbns.flags.opcode == 5</code> </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Phishing Analysis Tool</title>
+<meta name="description" content="phishing analysis tools">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Phishing Analysis Tool</h3>
+</header>
+
+<!-- First and Second step -->
+<div class="flex-container">
+    <div class="step-container">
+        <h2>First step: <i>Take Information</i></h2>
+        <ul>
+            <li><b>From</b> – the sender’s email address</li>
+            <li><b>Subject</b> – the email’s subject line</li>
+            <li><b>Date</b> – the date when the email was sent</li>
+            <li><b>To</b> – the recipient’s email address</li>
+            <li><b>X-Originating-IP</b> – The IP address of the email was sent from</li>
+            <li><b>Smtp.mailfrom/header.from</b> – The domain the email was sent from</li>
+            <li><b>Reply-To</b> – This is the email address a reply email will be sent to</li>
+            <li><b>URLs or Attachments</b></li>
+        </ul>
+    </div>
+
+    <div class="step-container">
+        <h2>Second step: <i>Answer Question</i></h2>
+        <ul>
+            <li><b>What's Subject?</b></li>
+            <li><b>Who is the email from?</b></li>
+            <li><b>What is their email address?</b></li>
+            <li><b>What email address will receive a reply?</b></li>
+            <li><b>What is the Originating IP?</b></li>
+            <li><b>Who is the owner of the Originating IP?</b> – <a href="https://www.whois.com/whois/" target="_blank">Whois Lookup</a></li>
+            <li><b>DMARC/SPF record for the Return-Path domain?</b> – <a href="https://dmarcian.com/domain-checker" target="_blank">Domain Checker</a></li>
+            <li><b>Attachments?</b></li>
+            <li><b>SHA256 hash of attachment</b></li>
+            <ul>
+                <li>Download the file (without executing it!)</li>
+                <li>On linux-terminal: sha256sum [filename]</li>
+                <li>Copy hash to <a href="https://www.virustotal.com/gui/home/search" target="_blank">VirusTotal</a></li>
+            </ul>
+        </ul>
+    </div>
+</div>
+
+<!-- Third step -->
+<div class="sub-container">
+    <h2>Third step: <i>Extra</i></h2>
+    <p>VirusTotal provides a lot of information to complete our analysis!</p>
+    <p>Sometimes, you might need to enumerate its website and discover extra files, download and analyze them, especially if there are any logs or zip files.</p>
+</div>
+
+<!-- Phishing Analysis Tools -->
+<div class="sub-container">
+    <h2>Phishing Analysis Tools</h2>
+
+    <h3>Email Header Analysis</h3>
+    <div class="tools-container">
+        <a href="https://toolbox.googleapps.com/apps/main" target="_blank" class="button-link">Message Header</a>
+        <a href="https://mha.azurewebsites.net/" target="_blank" class="button-link">Message Header Analyzer</a>
+        <a href="https://mailheader.org/" target="_blank" class="button-link">Mail Header</a>
+    </div>
+
+    <h3>Sender IP Analysis</h3>
+    <div class="tools-container">
+        <a href="https://ipinfo.io/" target="_blank" class="button-link">IPinfo.io</a>
+        <a href="https://urlscan.io/" target="_blank" class="button-link red-button">URLScan.io</a>
+        <a href="https://www.url2png.com/" target="_blank" class="button-link">Url2png</a>
+        <a href="https://www.wannabrowser.net/" target="_blank" class="button-link">Wannabrowser</a>
+        <a href="https://talosintelligence.com/reputation" target="_blank" class="button-link">Talos Reputation</a>
+    </div>
+
+    <h3>Email Body Analysis</h3>
+    <div><p>This is where the malicious payload may be delivered to the recipient either as a link or an attachment.</p>
+         <p><b>1)</b> Links can be extracted manually, either directly from an HTML formatted email or by sifting through the raw email header.</p>
+         <p><i>Link manually from an email by right-clicking the link and choosing Copy Link Location.</i> or
+            The same can be accomplished with the assistance of a tool.<br></p>
+        <div class="tools-container">
+            <a href="https://www.convertcsv.com/url-extractor.htm" target="_blank" class="button-link">URL Extractor</a>
+            <a href="https://gchq.github.io/CyberChef/" target="_blank" class="button-link red-button">CyberChef</a>
+        </div>
+        <p><b>Tip:</b> It's important to note the root domain for the extracted URLs. You will need to perform an analysis on the root domain as well.</p>
+        <p><b>2)</b> After extracting the URLs, the next step is to check the reputation of the URLs and root domain. You can use any of the tools mentioned in the previous task to aid you with this.  (<a href="https://talosintelligence.com/talos_file_reputation" target="_blank">Talos File Reputation</a>) </p>
+        <p>If the email has an attachment, you'll need to obtain the attachment safely. Accomplishing this is easy in Thunderbird by using the Save button. <br> After you have obtained the attachment, you can then get its hash. You can check the file's reputation with the hash to see if it's a known malicious document.</p>
+        <p><i>Example:</i>user@machine$ sha256sum Double\ Jackpot\ Slots\ Las\ Vegas.dot<br></p>
+        <div class="tools-container">            
+            <a href="https://www.virustotal.com/gui/" target="_blank" class="button-link red-button">VirusTotal</a>
+            <a href="https://talosintelligence.com/talos_file_reputation" target="_blank" class="button-link">Talos File Reputation</a>
+            <a href="https://www.reversinglabs.com/" target="_blank" class="button-link">Reversing Labs</a>
+            <a href="https://register.reversinglabs.com/file_reputation" target="_blank" class="button-link">Reversing Labs File Reputation</a>
+        </div>
+    </div>
+
+    <h3>Malware Sandbox</h3>
+    <p>We can upload an attachment we obtained from a potentially malicious email and see what URLs it attempts to communicate with, what additional payloads are downloaded to the endpoint, persistence mechanisms, Indicators of Compromise (IOCs), etc. </p>
+    <div class="tools-container">
+        <a href="https://app.any.run/" target="_blank" class="button-link">Any.Run</a>
+        <a href="https://www.hybrid-analysis.com/" target="_blank" class="button-link red-button">Hybrid Analysis</a>
+        <a href="https://www.joesecurity.org/" target="_blank" class="button-link">JoeSecurity</a>
+    </div>
+
+    <h3>Extra Tools</h3>
+    <div class="tools-container">
+        <a href="https://www.phishtool.com" target="_blank" class="button-link">Phishtool</a>
+        <a href="https://mxtoolbox.com/" target="_blank" class="button-link">Mx Toolbox</a>
+        <a href="https://phishtank.com/" target="_blank" class="button-link">Phishtank</a>
+        <a href="https://www.spamhaus.org/" target="_blank" class="button-link">Spamhaus</a>
+        <a href="https://github.com/ninoseki/eml_analyzer" target="_blank" class="button-link">Eml Analyzer</a>
+    </div>
+</div>
+
+</body>
+</html>

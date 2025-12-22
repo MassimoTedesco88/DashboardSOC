@@ -1,0 +1,209 @@
+body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+    }
+
+    /* Header */
+.dashboard {
+        width: 100%;
+        height: 300px; /* altezza fissa */
+        overflow: hidden;
+        box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+    }
+
+.dashboard iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+header {
+        text-align: center;
+        background: #ffffff;
+        padding: 15px;
+        box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+        position: relative;
+    }
+
+header h3 {
+        margin: 10px 0 0 0;
+        font-size: 22px;
+        color: #333;
+    }
+
+    /* linea separatrice */
+.line {
+        height: 3px;
+        background: linear-gradient(to right, #ccc, #eee, #ccc);
+        box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+        margin: 10px 0 20px 0;
+        border-radius: 2px;
+    }
+
+    /* Step container */
+.flex-container {
+        display: flex;
+        justify-content: space-between;
+        padding: 20px;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+.step-container {
+        width: 48%;
+        min-width: 300px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        box-sizing: border-box;
+    }
+.search{    
+    margin-bottom:15px;    
+    text-align:center;  
+   
+}
+.links{    
+    margin-bottom:10px;    
+    text-align:center;        
+}
+
+    /* Sub containers */
+.sub-container {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin: 20px;
+    }
+
+h1{
+    text-align: center;
+}
+
+h2 {
+        font-size: 22px;
+        color: #333;
+    }
+
+ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+ul li {
+        padding: 6px 0;
+        font-size: 16px;
+        color: #555;
+    }
+
+ul li a {
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    /* Pulsanti Tools */
+.tools-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+a.button-link {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #007bff; /* blu standard */
+        color: #fff;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 14px;
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+        transition: 0.3s;
+    }
+
+a.button-link1:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 4px 8px rgba(180, 214, 58, 0.2);
+    }
+
+a.button-link1 {
+        display: inline-block;
+        padding: 8px 16px;
+        margin-bottom: 5px;
+        background-color: #e1f4ab; /* blu standard */
+        color: #4c4a4ae0;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 14px;
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+        transition: 0.3s;
+    }
+
+a.button-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+    }
+
+a.red-button {
+        background-color: #d9534f; 
+    }
+
+a.red-button:hover {
+        background-color: #c12e2a;
+    }
+
+a.green-button {
+        background-color: #bbe4e9;
+        color: #4c4a4ae0;
+    }
+
+a.green-button:hover {
+        background-color: #79c2d0;
+    }
+a.yellow-button {
+        background-color: #fff048;
+        color: #4c4a4ae0;
+    }
+
+a.yellow-button:hover {
+        background-color: #e0ff32;
+    }
+a.blau-button {
+        background-color: #c38fff;
+        color: #4c4a4ae0;
+    }
+
+a.blau-button:hover {
+        background-color: #fd94fd;
+    }
+.notePiccole{
+    font-size:.65rem;
+}
+code{
+    background-color: #e1f4ab;
+}
+.mark1{
+    background-color: #d87d7d;
+}
+.mark2{
+    background-color: #a7ffa4;
+}
+
+
+
+    /* Responsive */
+@media (max-width: 768px) {
+        .flex-container {
+            flex-direction: column;
+            align-items: center;
+        }
+        .step-container {
+            width: 90%;
+        }
+        .tools-container {
+            justify-content: center;
+        }
+    }

@@ -1,0 +1,290 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Win Event Logs</title>
+<meta name="description" content="Win Event Logs">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Win Event Logs</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#EventID"  class="button-link">Event ID</a>
+        <a href="#hashtable"  class="button-link">Filter Hash Table</a>
+        <a href="#xpath" class="button-link">XPath Queries</a>
+        <a href="#getwinevent"  class="button-link ">Get-WinEvent</a>
+        <a href="#wevtutil"  class="button-link">wevtutil.exe</a>
+        
+        </div>
+
+</div> 
+<div class="sub-container">
+    <h3 >Windows Event Logs</h3>
+<p>The Windows Event Logs are not text files that can be viewed using a text editor. However, the raw data can be translated into XML using the Windows API. The events in these log files are stored in a proprietary binary format with a .evt or .evtx extension. The log files with the .evtx file extension typically reside in <code>C:\Windows\System32\winevt\Logs </code></p>
+<p><i>Event logs classified into types:</i></p>
+<ul>
+    <li><b>Error</b>	An event that indicates a significant problem such as loss of data or loss of functionality. For example, if a service fails to load during startup, an Error event is logged.</li>
+    <li><b>Warning</b>	An event that is not necessarily significant, but may indicate a possible future problem. For example, when disk space is low, a Warning event is logged. If an application can recover from an event without loss of functionality or data, it can generally classify the event as a Warning event.</li>
+    <li><b>Information</b>	An event that describes the successful operation of an application, driver, or service. For example, when a network driver loads successfully, it may be appropriate to log an Information event. Note that it is generally inappropriate for a desktop application to log an event each time it starts.</li>
+    <li><b>Success Audit</b>	An event that records an audited security access attempt that is successful. For example, a user's successful attempt to log on to the system is logged as a Success Audit event.</li>
+    <li><b>Failure Audit</b>	An event that records an audited security access attempt that fails. For example, if a user tries to access a network drive and fails, the attempt is logged as a Failure Audit event.</li>
+</ul>
+<p>There are three main ways of accessing these event logs within a Windows system:</p>
+<ul><li>Event Viewer (GUI-based application) -  </li>
+    <li>Wevtutil.exe (command-line tool)</li>
+    <li>Get-WinEvent (PowerShell cmdlet)</li>
+</ul>
+<h3>Event Viewer</h3>
+<ul>
+    <li><i>Event Viewer can be launched by typing eventvwr.msc</i></li>
+    <li>To view event logs from another computer, right-click Event Viewer (Local) > Connect to Another Computer.</li>
+</ul>
+<h3>wevutil.exe</h3>
+<ul>
+    <li>The wevtutil.exe tool "enables you to retrieve information about event logs and publishers. You can also use this command to install and uninstall event manifests, to run queries, and to export, archive, and clear logs.</li>
+    <li><code>PS> C:\Users\Administrator> wevtutil.exe /?</code> Elenco dei comandi/opzioni</li>
+    <li><a href="https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/wevtutil" target="_blank" >Guida ufficiale su wevtutil</a></li>    
+</ul>
+<p id="wevtutil">Esempi utili:</p>
+<p><b>Per utilizzare wevtutil.exe e ottenere il numero dei nomi dei log, puoi eseguire il seguente comando in PowerShell:</b></p>
+<ul>
+    <li><code>wevtutil el | Measure-Object</code>  Questo comando elenca tutti i log disponibili e poi conta il numero di log utilizzando Measure-Object. Il risultato sarà un conteggio dei log presenti nel sistema.</li>
+</ul>
+<p><b>Per utilizzare il comando wevtutil con query-events, puoi usare la seguente sintassi:</b></p>
+<ul>
+    <li><code>wevtutil qe <NomeLog> /q:"<QueryXPath>" /f:text</code></li>
+    <li><code>wevtutil qe Application /q:"*/System[EventID=100]" /f:text </code>  <i>(esempio per ottenere gli eventi dal log 'Application' per EventID 100 in formato testo)</i></li>
+    <li><code>wevtutil qe /? </code> help per wevtutil con opzione query</li>
+    <li><code>/{lf | logfile}:[true|false]</code> If true, <PATH> is the full path to a log file.</li>
+</ul>
+<p><code>wevtutil qe Application /c:3 /rd:true /f:text</code></p>
+<ul>
+    <li><i>Application</i> = nome event log, log file </li>
+    <li><i>/{c | count}:<n>  </i>= Maximum number of events to read. </li>
+    <li><i>{rd | reversedirection}:[true|false] </i>= Event read direction. If true, the most recent events are returned first. </li>
+    <li><i>/{f | format}:[XML|Text|RenderedXml] </i>= The default value is XML. If Text is specified, prints events in an
+easy to read text format, rather than in XML format. If RenderedXml, prints
+events in XML format with rendering information. Note that printing events in
+Text or RenderedXml formats is slower than printing in XML format.</li>
+</ul>
+<h3>Get-WinEvent</h3>
+<p>This is a PowerShell cmdlet called Get-WinEvent. Per Microsoft, the Get-WinEvent cmdlet "gets events from event logs and event tracing log files on local and remote computers." It provides information on event logs and event log providers. Additionally, you can combine numerous events from multiple sources into a single command and filter using XPath queries, structured XML queries, and hash table queries.</p>
+<a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-winevent?view=powershell-5.1" target="_blank" >Guida ufficiale su Get-WinEvent</a>
+<ul id="getwinevent">
+    <li><code>Get-WinEvent -ListLog * </code>  Get all logs from a computer   </li>
+    <li><code>Get-WinEvent -ListProvider *</code>  Get event log providers and log names</li>
+    <li><code>Get-WinEvent -LogName Application | Where-Object { $_.ProviderName -Match 'WLMS' }</code>  Log filtering</li>
+</ul>
+<a href="#inizio"  class="button-link">Torna all'indice!</a>
+<p id="hashtable">When working with <i>large event logs</i>, per Microsoft, it's inefficient to send objects down the pipeline to a Where-Object command. The use of the Get-WinEvent cmdlet's FilterHashtable parameter is recommended to filter event logs.</p>
+<code>Get-WinEvent -FilterHashtable @{
+  LogName='Application' 
+  ProviderName='WLMS' 
+}</code>
+
+<h4><i>The syntax of a hash table</i> is as follows: @{ <name> = <value>; [<name> = <value> ] ...}</h4>
+    <ul>
+        <li>Begin the hash table with an @ sign.</li>
+        <li>Enclose the hash table in braces {}</li>
+        <li>Enter one or more key-value pairs for the content of the hash table.</li>
+        <li>Use an equal sign (=) to separate each key from its value.</li>        
+    </ul>
+<p><i>FilterHashtable per Livello:</i> Livelli evento (syslog / Windows)</p>
+<ul>
+    <li>1 = Critical</li>
+    <li>2 = Error</li>
+    <li>3 = Warning</li>
+    <li>4 = Information (a volte 4 o 6 a seconda del contesto)</li>
+    <li>5 = Verbose</li>
+    <li>6 = Informational (standard syslog)</li>
+</ul>
+<p>⚠️ In Windows Event Log, di solito: Level = 4 → Information</p>
+<p>Esempio:</p>
+<code>Get-WinEvent -FilterHashtable @{
+    LogName   = 'Application'
+    Level     = 4
+    StartTime = (Get-Date).AddDays(-1)
+}
+</code>
+
+<p><i>The valid Get-WinEvent key/value pairs are as follows:</i></p>
+<ul>
+    <li>LogName= String[]</li>
+    <li>ProviderName= String[]</li>
+    <li>Path= String[]</li>
+    <li>Keywords= Long[]</li>
+    <li>ID= Int32[]</li>
+    <li>Level= Int32[]</li>
+    <li>StartTime= DateTime</li>
+    <li>EndTime= DateTime</li>
+    <li>UserID= SID</li>
+    <li>Data= String[]</li>
+</ul>
+<p>When building a query with a hash table, Microsoft recommends making the hash table <i>one key-value pair at a time.</i> Event Viewer can provide quick information on what you need to build your hash table.
+</p>
+<a href="https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-winevent?view=powershell-7.5&viewFallbackFrom=powershell-7.11" target="_blank" >Get-WinEvent - PS 7.5</a>
+<ul>
+    <li><code>Get-WinEvent -ListLog *OpenSSH*</code> elenca i Log con il nome contenuto nella stringa tra gli *</li>
+    <li><code>(Get-WinEvent -ListProvider Microsoft-Windows-GroupPolicy).Events |
+    Format-Table Id, Description
+</code> This command lists the Event Ids that the Microsoft-Windows-GroupPolicy event provider generates along with the event description.</li>
+    <li><code>$Date = (Get-Date).AddDays(-2)<br>
+Get-WinEvent -FilterHashtable @{ LogName='Application'; StartTime=$Date; Id='1003' }</code> The Get-WinEvent cmdlet gets log information. The FilterHashtable parameter is used to filter the output. The LogName key specifies the value as the Application log. The StartTime key uses the value stored in the $Date variable. The Id key uses an Event Id value, 1003.
+</li>   
+</ul>
+
+<p>Esempio: Filter Event log results</p>
+<code>
+    <b># Using the Where-Object cmdlet:</b><br>
+$Yesterday = (Get-Date) - (New-TimeSpan -Day 1)<br>
+Get-WinEvent -LogName 'Windows PowerShell' | Where-Object { $_.TimeCreated -ge $Yesterday }
+
+<br><b># Using the FilterHashtable parameter:</b><br>
+$Yesterday = (Get-Date) - (New-TimeSpan -Day 1)<br>
+Get-WinEvent -FilterHashtable @{ LogName='Windows PowerShell'; Level=3; StartTime=$Yesterday }
+
+<br><b># Using the FilterXML parameter: (<> equivale a < , perchè mi dava errore di visualizzazione)</b><br>
+$xmlQuery = @'<br>
+<>QueryList><br>
+  <>Query Id="0" Path="Windows PowerShell"><br>
+    <>Select Path="System">*[System[(Level=3) and
+        TimeCreated[timediff(@SystemTime) &amp;lt;= 86400000]]]</Select><br>
+  <>/Query><br>
+<>/QueryList><br>
+'@
+Get-WinEvent -FilterXML $xmlQuery
+
+<br><b># Using the FilterXPath parameter:</b><br>
+$XPath = '*[System[Level=3 and TimeCreated[timediff(@SystemTime) &amp;lt;= 86400000]]]' <br>
+Get-WinEvent -LogName 'Windows PowerShell' -FilterXPath $XPath
+
+</code><br>
+<a href="#inizio"  class="button-link">Torna all'indice!</a>
+<h3 id="xpath">XPath Queries</h3>
+<p>The W3C created XPath, or XML Path Language in full, to provide a standard syntax and semantics for addressing parts of an XML document and manipulating strings, numbers, and booleans . The Windows Event Log supports a subset of XPath 1.0</p>
+<ul>
+    <li>Click on the Details tab and select the XML View radio button.</li>
+    <li>An XPath event query starts with '*' or 'Event'.</li>
+    <li><code>Get-WinEvent -LogName Application -FilterXPath '*'</code></li>
+    <li><code>Get-WinEvent -LogName Application -FilterXPath '*/System/'</code></li>
+    <li><code>Get-WinEvent -LogName Application -FilterXPath '*/System/EventID=100'</code></li>
+    <li><code>Get-WinEvent -LogName Application -FilterXPath '*/System/Provider[@Name="WLMS"]'</code></li>
+    <li><code>Get-WinEvent -LogName Application -FilterXPath '*/System/EventID=101 and */System/Provider[@Name="WLMS"]'</code></li>
+    <li><code>Get-WinEvent -LogName Security -FilterXPath '*/EventData/Data[@Name="TargetUserName"]="System"'</code></li>
+</ul>
+<p><b>Nota Bene:</b> Prendendo i dettagli dal file XML, è facile scomporre la struttura e creare qualsiasi query ( ho scritto in sequenza le query per velocizzare la comprensione! )</p>
+
+<p>Esempi:</p>
+<ul>
+    <li><code>Get-WinEvent -LogName System |
+  Group-Object Id |
+  Sort-Object Count -Descending
+</code>  Elenca tutti gli Eventi ID presenti nel logname</li>
+    <li><code>Get-WinEvent -ListLog * |
+  Select-Object -First 10 LogName
+</code>  I primi 10 "Logname"</li>
+    <li><code>Get-WinEvent -LogName Security |
+  Group-Object Id |
+  Sort-Object Count -Descending |
+  Select-Object -First 10 Name, Count
+</code> (dopo Group-Object non esiste più Id, ma Name (che rappresenta l’Event ID).)</li>
+    <li><code>Get-WinEvent -ListLog * |
+  Select-Object LogName |
+  Sort-Object LogName
+</code>  Elenca tutti i Logname disponibili</li>
+    <li><code>Get-WinEvent -LogName Application -FilterXPath '*/System/Provider[@Name="WLMS"] and */System/
+TimeCreated[@SystemTime="2020-12-15T01:09:08.940277500Z"]'</code> Elenca log con quel Provider name e data</li>
+    <li><code>Get-WinEvent -LogName Security -FilterXPath ‘*/EventData/Data[@Name=”TargetUserName”]=”Sam” and */System/EventID=4720’ </code> Combo di 2 query con event ID e UserName</li>
+</ul>
+<ul>
+    <li><code>Get-WinEvent -Path "C:\Users\Administrator\Desktop\merged.evtx" | Where-Object { $_.Id -eq 1102 }</code> Ricerca Event ID = 1102 da file log esterno </li>
+        <li><code>Get-WinEvent -Path "C:\Users\Administrator\Desktop\merged.evtx" | Where-Object {
+    $_.ProviderName -eq "EventLog"
+}</code> Ricerca ProviderName = EventLog da file log esterno </li>
+    <li><code>Get-WinEvent -Path "C:\Users\Administrator\Desktop\merged.evtx" | Where-Object { $_.Id -gt 9999 }</code> Ricerca Event ID > 9999 da file log esterno </li>
+    <li><code>Get-WinEvent -Path "C:\Logs\Application.evtx" |
+Where-Object {
+    $_.ProviderName -eq "EventLog" -and
+    $_.Id -gt 9999
+}</code> Combo Ricerca Event ID > 9999 + EventLog da file esterno</li>
+    <li><code>Get-WinEvent -Path "C:\Logs\Application.evtx" |
+Where-Object { $_.Id -gt 9999 } |
+Select-Object TimeCreated, Id, ProviderName, LevelDisplayName
+ </code> Ricerca event id > 9999 da file esterno, con colonne selezionate</li>
+ <li><code>Get-WinEvent -LogName Security -MaxEvents 5 |
+ForEach-Object { $_.ToXml() }</code> Legge i primi 5 elementi del log e ci fa vedere XML</li>
+    <li><code>Get-WinEvent -Path "C:\Users\Administrator\Desktop\merged.evtx" | Where-Object { $_.Id -eq 104 -and $_.TimeCreated -eq "3/19/2019 4:34:25 PM"} | ForEach-Object {$_.ToXml()}</code> da log esterno, event id = 104, tempo definito e risultato XML</li>
+    <li><code>Get-WinEvent -Path "C:\Users\Administrator\Desktop\merged.evtx" -FilterXPath '*/EventData/Data[@Name="CallerProcessName"]="C:\Windows\System32\net1.exe"'
+</code> - ricerca da file esterno dato nome del processo</li>
+
+</ul>
+<p>Risorse Utilissime:</p>
+<ul>
+    <li><a href="https://static1.squarespace.com/static/552092d5e4b0661088167e5c/t/580595db9f745688bc7477f6/1476761074992/Windows+Logging+Cheat+Sheet_ver_Oct_2016.pdf
+" target="_blank" >Cheat Sheet Ottimo!</a></li>
+    <li><a href="https://web.archive.org/web/20190115215749/https://apps.nsa.gov/iaarchive/customcf/openAttachment.cfm?FilePath=/iad/library/ia-guidance/security-configuration/applications/assets/public/upload/Spotting-the-Adversary-with-Windows-Event-Log-Monitoring.pdf&WpKes=aF6woL7fQp3dJiqyJL2LenrLxuHC7ztGtVNK3x
+" target="_blank" >Approfondimento su Event Log Monitoring</a></li>
+    <li><a href="https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/plan/appendix-l--events-to-monitor
+" target="_blank" >Event ID Table</a></li>
+   
+
+<h3>Importante</h3>
+<p>Note: Some events will not be generated by default, and certain features will need to be enabled/configured on the endpoint, such as PowerShell logging. This feature can be enabled via Group Policy or the Registry.</p>
+<code>Local Computer Policy > Computer Configuration > Administrative Templates > Windows Components > Windows PowerShell</code>
+<p>Another feature to enable/configure is Audit Process Creation, which will generate event ID 4688. This will allow command-line process auditing. This setting is NOT enabled in the virtual machine but feel free to enable it and observe the events generated after executing some commands.</p>
+<code>Local Computer Policy > Computer Configuration > Administrative Templates > System > Audit Process Creation</code>
+</ul>
+<a href="#inizio"  class="button-link">Torna all'indice!</a>
+<h3 id="EventID">Event ID:</h3>
+<h6>Eventi di cancellazione o manomissione dei log</h6>
+<ul>
+    <li>104 - Log di sistema cancellato (non sicurezza) , Source: Event Log</li>
+    <li>1100 - Il servizio Windows Event Log è stato arrestato</li>
+    <li>1102 - Event log cleared</li>
+    <li>1104 - Il log di sicurezza è pieno</li>
+    <li>1105 - Evento di audit perso</li>    
+</ul>
+<h6>Attività utente / amministrativa sospetta</h6>
+<ul>
+    <li>4624 - Login riuscito</li>
+    <li>4625 - Login fallito</li>
+    <li>4648 - Login con credenziali esplicite</li>
+    <li>4672 - Login con privilegi amministrativi</li>
+    <li>4634 / 4647 - Logout</li>
+</ul>
+
+<h3>PowerShell downgrade attack</h3>
+<p>è una tecnica in cui un attaccante sfrutta le versioni precedenti di PowerShell per eludere le misure di sicurezza</p>
+<p><b>Ricerca su MITRE:</b> Impair Defenses: Downgrade Attack :  ID: T1562.010 ,   Sub-technique of:  T1562  , Tactic: Defense Evasion</p>
+<p><b>Detecting Downgrade Attacks :</b> DET0350</p>
+<ul>
+    <li>Process Creation (DC0032)	<code>WinEventLog:Sysmon	EventCode=1</code></li>
+    <li>Windows Registry Key Modification (DC0063)	<code>WinEventLog:Security	EventCode=4657</code></li>
+</ul>
+<p><b>Abuse of PowerShell for Arbitrary Execution</b> Technique Detected:  PowerShell | T1059.001 , ID: DET0455</p>
+<ul>
+    <li>Process Creation (DC0032)	<code>WinEventLog:Sysmon	EventCode=1</code></li>
+    <li>Command Execution (DC0064)	<code>WinEventLog:PowerShell	EventCode=4103, 4104, 4105, 4106</code></li>
+    <li>Process Metadata (DC0034)	<code>WinEventLog:PowerShell	EventCode=400, 403</code></li>
+    <li>Module Load (DC0016)	<code>WinEventLog:Sysmon	EventCode=7</code></li>
+</ul>
+<p><b>Process Metadata:</b> Contextual data about a running process, which may include information such as environment variables, image name, user/owner, etc.
+	<br><code>WinEventLog:PowerShell	EventCode=400, 403</code></p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+</div>
+
+
+</body>
+</html>

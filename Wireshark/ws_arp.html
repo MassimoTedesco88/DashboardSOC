@@ -1,0 +1,105 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Wireshark Filters</title>
+<meta name="description" content="Wireshark">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="../Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="../dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Wireframe iframe -->
+<div class="dashboard">
+    <iframe src="../WiresharkFilters.html" title="wiresharkFilters"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>ARP Poisoning/Spoofing (A.K.A. Man In The Middle Attack)</h3>
+</header>
+      
+<div class="sub-container">
+    <h2>ARP analysis:</h2>
+    <ul>
+        <li class="mark2">Works on the local network</li>
+        <li class="mark2">Enables the communication between MAC addresses</li>
+        <li class="mark2">Not a secure protocol</li>
+        <li class="mark2">Not a routable protocol</li>
+        <li class="mark2">It doesn't have an authentication function</li>
+        <li class="mark2">Common patterns are request & response, announcement and gratuitous packets.</li>
+        <li class="mark2">Before investigating the traffic, let's review some legitimate and suspicious ARP packets. The legitimate requests are similar to the shown picture: a broadcast request that asks if any of the available hosts use an IP address and a reply from the host that uses the particular IP address.</li>
+    </ul>
+    <ul>
+        <li><b>Global search: </b><code>arp</code></li>
+        <li><b>Opcode 1: ARP requests: </b><code>arp.opcode == 1</code></li>
+        <li><b>Opcode 2: ARP responses: </b><code>arp.opcode == 2</code></li>
+        <li><b>Hunt:Arp scanning: </b><code>arp.dst.hw_mac==00:00:00:00:00:00</code></li>
+        <li><b>Hunt:Possible ARP poisoning detection: </b><code>arp.duplicate-address-detected or arp.duplicate-address-frame</code></li>
+        <li><b>Hunt:Possible ARP flooding from detection: </b><code>((arp) && (arp.opcode == 1)) && (arp.src.hw_mac == target-mac-address)</code></li>      
+    </ul>
+    <hr>
+    <div class="flex-container">
+    <div class="step-container">
+    <h3>Example:</h3>
+    <p><b>Possible IP address match</b> > <i> 1 IP address announced from a MAC address</i></p>
+    <p>MAC: 00:0c:29:e2:18:b4 IP: 192.168.1.25 </p>
+    <p><b>Possible ARP spoofing attempt.</b></p>	
+    <p><i>2 MAC addresses claimed the same IP address (192.168.1.1).</i>
+    The " 192.168.1.1" IP address is a possible gateway address.</p>
+    <p>MAC1: 50:78:b3:f3:cd:f4  MAC2: 00:0c:29:e2:18:b4</p>
+    <p><b>Possible ARP spoofing attempt.</b> <i>The MAC address that ends with "b4" claims to have a different/new IP address. </i></p>
+    <p>MAC: 00:0c:29:e2:18:b4 IP: 192.168.1.1</p>
+    <p><b>Possible ARP flooding attempt.</b> <i>The MAC address that ends with "b4" crafted multiple ARP requests against a range of IP addresses.</i></p>
+    <p>MAC: 00:0c:29:e2:18:b4 IP: 192.168.1.xxx</p>
+    <br>
+    <h3>Anomalies:</h3>
+    <ul>
+    <li>There is HTTP traffic, and everything looks normal at the IP level, so there is no linked information with our previous findings. Let's add the MAC addresses as columns in the packet list pane to reveal the communication behind the IP addresses.</li>
+    <li>One more anomaly! The MAC address that ends with "b4" is the destination of all HTTP packets! It is evident that there is a <span class="mark1">MITM attack</span>, and the attacker is the host with the MAC address that ends with "b4". All traffic linked to "192.168.1.12" IP addresses is forwarded to the malicious host. Let's summarise the findings before concluding the investigation.</li>
+    </ul>
+    </div>
+    <div class="step-container">
+
+    <h3>Detection Notes</h3>
+    <ul><li><b>http</b>
+        <ul>
+            <li>192.168.1.12 mac 00:0c:29:98:c7:a8</li>
+            <li>44.228.249.3 mac 00:0c:29:e2:18:b4</li>
+            <li>44.228.249.3 mac 50:78:b3:f3:cd:f4</li>
+            <li>192.168.1.12 mac 00:0c:29:e2:18:b4</li>
+        </ul></li>
+        <li><b>IP to MAC matches</b>
+            <ul>
+                <li>MAC: 00:0c:29:e2:18:b4 = IP: 192.168.1.25</li>
+                <li>MAC: 50:78:b3:f3:cd:f4 = IP: 192.1681.1</li>
+                <li>MAC: 00:0c:29:98:c7:a8 = IP: 192.168.1.12</li>
+            </ul>
+        </li>
+        <li><b>Attacker:The attacker created noise with ARP packets</b>
+            <ul>
+                <li>MAC: 00:0c:29:e2:18:b4 = IP: 192.168.1.25</li>
+            </ul>    
+        </li>
+        <li><b>Router/gateway	Gateway address</b>
+            <ul>
+                <li>MAC: 50:78:b3:f3:cd:f4 = IP: 192.1681.1</li>
+            </ul>
+        </li>
+        <li><b>Victim: The attacker sniffed all traffic of the victim</b>
+            <ul>
+                <li>MAC: 50:78:b3:f3:cd:f4 = IP: 192.1681.12</li>
+            </ul>
+        </li>
+    </ul>
+    </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Detection WebAttacks</title>
+<meta name="description" content="detection">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Web Attacks Detection</h3>
+</header>
+<div class="links">    
+        <a href="#logs"  class="button-link" title="logs">Attacks in Logs</a>
+        <a href="#ws"   class="button-link" title="ws">Network-Based Detection</a>      
+        
+    </div>
+<!-- First and Second step -->
+<div class="flex-container">
+    <div class="step-container">
+        <h2>Client-Side attacks</h2>
+        <p><b>Client-Side attacks</b>  rely on abusing weaknesses in user behavior or on the user's device.</p>
+        <p> <b>SOC Limitations</b>:The tools available to an analyst, such as server-side logs and network traffic captures, offer little to no visibility into what occurs inside a user's browser. As discussed above, client-side attacks occur on the user's system, meaning they can execute malicious code, steal information, or manipulate the environment without generating suspicious HTTP requests or network traffic that the SOC can see. As a result, detecting these attacks from a SOC perspective is often difficult or even impossible without additional browser-side security controls or endpoint monitoring.</p>
+        <ul>
+            <li><b>Common Client-Side Attacks:</b> 
+            <ul>
+                <li><i>Cross-Site Scripting (XSS)</i> is the most common client-side attack, in which malicious scripts are run in a trusted website and executed in the user's browser. If your website has a comment box that doesn't filter input, an attacker could post a comment like: Hello <script>alert('You have been hacked');</script>. When visitors load the page, the script runs inside their browser, and the pop-up appears. In a real attack, instead of a harmless pop-up, the attacker could steal cookies or session data. </li>
+                <li><i>Cross-Site Request Forgery (CSRF):</i> The browser is tricked into sending unauthorized requests on behalf of the trusted user.</li>
+                <li><i>Clickjacking:</i> Attackers overlay invisible elements on top of legitimate content, making users believe they are interacting with something safe.</li>                
+            </ul></li>            
+        </ul>
+        <h2>Server-Side Attacks</h2>
+        <p><b>Server-side attacks</b>  rely on exploiting vulnerabilities within a web server, the application's code, or the backend that supports a website or a web application.</p>
+        <p><b>Catching Server-Side Attacks:</b> One advantage for defenders when dealing with server-side attacks is that they leave a trail of evidence, if you know where to look. Every web request sent to an application is processed by the server and is recorded in logs or other monitoring systems. These requests also travel across the network, meaning network traffic can reveal suspicious behavior. </p>
+        <ul>
+            <li><b>Common Server-Side Attacks:</b> 
+            <ul>
+                <li><i>Brute-force attacks</i> occur when an attacker repeatedly attempts different usernames or passwords in an attempt to gain unauthorized access to an account. Automated tools are often used to send these requests quickly, allowing attackers to go through large lists of credentials and common passwords. T-Mobile faced a breach in 2021 that stemmed from a brute-force attack, allowing attackers access to the personally identifiable information (PII) of over 50 million T-Mobile customers.</li>
+                <li><i>SQL Injection (SQLi)</i> relies on attacking the database that sits behind a website and occurs when applications build queries through string concatenation instead of using parameterized queries, allowing attackers to alter the intended SQL command and access or manipulate data. In 2023, an SQLi vulnerability in MOVEit, a file-transfer software, was exploited, affecting over 2,700 organizations, including U.S. government agencies, the BBC, and British Airways.</li>
+                <li><i>Command Injection</i> is a common attack that occurs when a website takes user input and passes it to the system without checking it. Attackers can sneak in commands, making the server run them with the same permissions as the application.</li>                
+            </ul></li>            
+        </ul>
+        <h2 >Log-Based Detection</h2>
+        <ol>
+            <li><i>Client IP Address</i> = A known malicious or outside of the expected geo range</li>
+            <li><i>Timestamp and Requested Page</i> = Requests made at unusual hours or repeated in a short period of time</li>
+            <li><i>Status Code</i>	= Repeated 404 responses indicating a page could not be found</li>
+            <li><i>Response Size</i> =	Significantly smaller or larger than normal response sizes</li>
+            <li><i>Referrer</i> = Referring pages that don't fit normal site navigation</li>
+            <li><i>User-Agent</i> = Outdated browser versions or common attack tools (e.g. sqlmap, wpscan)</li>
+        </ol>
+        <h3>Attacks in Logs </h3>
+        <p>Next, we'll examine an example of a condensed attack sequence. The sequence of log entries will only display the attacker's requests; in a real-world scenario, however, benign traffic would make up the vast majority of log entries, making it essential to develop a sharp eye for spotting malicious patterns amid normal activity. It is also important to note that in the example below, the query string in the SQLi attack is logged, so you will be able to see the full SQLi payloads.</p>
+        <ol>
+            <li>The attacker tests for potential directories and forms to exploit with a directory fuzz. The 200 response codes signify valid finds for the attacker.</li>
+            <li>Next, the attacker exploits the login.php form found with a brute-force attack. Note the repeated POST requests in quick succession. The last POST request has a different response code, 302 Found, which, in this case, signifies a successful login attempt. The page then redirects to the user's account page at /account.</li>
+            <li>Once the attacker gains access to the account, they attempt two SQLi payloads,<code> ' OR '1'='1 and 1' OR 'a'='a </code>, on the /search form. If the application builds SQL queries dynamically instead of using parameterised queries, the attacker could dump the database.</li>
+        </ol>
+        
+        <a id="logs" href="Images/detectingwebattacks_log.svg" target="_blank" ><img src="Images/detectingwebattacks_log.svg" alt="Esempio" style="width:450px; text-align:center;"></a>
+        
+        <p><b>Log Limitations</b> (The above sample log shows the request method, the requested page, and the status code, but not the actual credentials or payload that was submitted in the request.)</p>
+                   
+    </div>
+
+    <div class="step-container">
+        <h2 >Network-Based Detection</h2>
+        <p>Allows analysts to examine the raw data exchanged between a client and a server. By capturing and inspecting packets, analysts can observe attack behavior on a more detailed level, including the underlying transport protocols and the application data itself. Network captures are more verbose than server logs, revealing the data behind every request and response. This can include full HTTP headers, POST bodies, cookies, and uploaded and downloaded files, for example.
+Protocols that rely on encryption, like HTTPS and SSH, limit what can be seen in packet payloads without access to the decryption keys. </p>
+        <ul>
+            <li><b>Attacks in Network Traffic</b>
+                <li>Directory fuzz to find valid directories or forms.</li>
+                <li>Brute-force attempt with packet 13 being a successful login: You can use the Wireshark filter <code>http.response.code == 302</code> to search for successful logins.</li>
+                <li>SQL injection attempts: su Wireshark puoi cercare ip.src dell'attaccante, individua chi aveva qualche info su sql, e infine follow http stream</li>
+            </li>       
+        </ul>
+        <a  id="ws" href="Images/detectingwebattacks_wireshark.svg"  target="_blank" ><img src="Images/detectingwebattacks_wireshark.svg"  alt="Esempio" style="width:450px; text-align:center;"></a>
+        <a  href="Images/detectingwebattacks_wireshark2.svg" target="_blank" ><img src="Images/detectingwebattacks_wireshark2.svg" alt="Esempio" style="width:450px; text-align:center;"></a>
+        <a  href="Images/detectingwebattacks_wireshark3.svg" target="_blank" ><img src="Images/detectingwebattacks_wireshark3.svg" alt="Esempio" style="width:450px; text-align:center;"></a>
+    </div>
+</div>
+
+</body>
+</html>

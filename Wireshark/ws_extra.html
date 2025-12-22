@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Wireshark Filters</title>
+<meta name="description" content="Wireshark">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="../Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="../dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Wireframe iframe -->
+<div class="dashboard">
+    <iframe src="../WiresharkFilters.html" title="wiresharkFilters"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Wireshark Extra</h3>
+</header>
+      <!-- Suggestions -->
+<div class="sub-container">
+    <h2>Suggestions:</h2>
+    <p>Go > Go To Packet <i>Inserisci il numero di un determinato pacchetto</i></p>  
+    <p>Statistics > resolved Addressed > Hosts<i>This option helps analysts identify IP addresses and DNS names available in the capture file by providing the list of the resolved addresses and their hostnames.</i></p>  
+    <p>Statistics > Protocol Hierarchy <i>This option breaks down all available protocols from the capture file and helps analysts view the protocols in a tree view based on packet counters and percentages. Thus analysts can view the overall usage of the ports and services and focus on the event of interest.</i></p>  
+    <p>Statistic > Conversations <i>Conversation represents traffic between two specific endpoints. This option provides the list of the conversations in five base formats; ethernet, IPv4, IPv6, TCP and UDP. Thus analysts can identify all conversations and contact endpoints for the event of interest.  </i></p>
+    <p>Statistics > Endpoints <i> The endpoints option is similar to the conversations option. The only difference is that this option provides unique information for a single information field (Ethernet, IPv4, IPv6, TCP and UDP ). Thus analysts can identify the unique endpoints in the capture file and use it for the event of interest.
+        <br> Wireshark also supports resolving MAC addresses to human-readable format using the manufacturer name assigned by IEEE. Note that this conversion is done through the first three bytes of the MAC address and only works for the known manufacturers. When you review the ethernet endpoints, you can activate this option with the"Name resolution"button in the lower-left corner of the endpoints window.</i></p>
+    <p>Tools > Firewall ACL Rules <i>Wireshark can create rules for: Netfilter (iptables), Cisco IOS,IP Filter (ipfilter),IPFirewall (ipfw),Packet filter (pf),Windows Firewall</i></p>
+    <p><a href="https://www.wireshark.org/docs/dfref/ " target="_blank">Filters</a><i> Elenco dei filtri che si possono applicare</i></p><hr>   
+    <p>There are a few things to remember about the <b>NetworkMiner:</b> Don't use this tool as a primary sniffer.
+Use this tool to overview the traffic, then move forward with Wireshark and tcpdump for a more in-depth investigation.</p>
+</div>
+
+</body>
+</html>

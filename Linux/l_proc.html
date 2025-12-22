@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Wireshark Filters</title>
+<meta name="description" content="Wireshark">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="../Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="../dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Wireframe iframe -->
+<div class="dashboard">
+    <iframe src="../LinuxCMD.html" title="linuxCMD"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Cleartext Protocol Analysis: HTTP</h3>
+</header>
+      
+<div class="sub-container">
+    <h2>HTTP Analysis</h2>
+    <p>Hypertext Transfer Protocol (HTTP) is a cleartext-based, request-response and client-server protocol. It is the standard type of network activity to request/serve web pages, and by default, it is not blocked by any network perimeter. As a result of being unencrypted and the backbone of web traffic, HTTP is one of the must-to-know protocols in traffic analysis. 
+        Following attacks could be detected with the help of HTTP analysis:</p>
+    <ul>
+        <li class="mark1">Phishing pages</li>
+        <li class="mark1">Web attacks</li>
+        <li class="mark1">Data exfiltration</li>
+        <li class="mark1">Command and control traffic (C2)</li>
+    </ul> 
+    <div class="flex-container">
+        <div class="step-container">
+            <ul>
+                <li><b>Global search:</b><code> http  http2 </code><span class="notePiccole">(<b>Note:</b> HTTP2 is a revision of the HTTP protocol for better performance and security. It supports binary data transfer and request&response multiplexing.)</span></li>
+                <li><b>HTTP Request Methods</b>
+                    <ul>
+                        <li><b>GET</b> <code>  http.request.method == "GET"</code></li>
+                        <li><b>POST</b> <code>  http.request.method == "POST"</code></li>
+                        <li><b>All requests</b> <code>  http.request</code></li>
+                    </ul></li>
+                <li><b>HTTP Request Status Codes</b> <code>http.response.code == 200</code></li>
+                <li><b>HTTP Parameters</b>
+                    <ul>
+                        <li><b>User agent:</b> Browser and operating system identification to a web server application.  <code>http.user_agent contains "nmap"</code></li>
+                        <li><b>Request URI:</b> Points the requested resource from the server.  <code>http.request.uri contains "admin"</code></li>
+                        <li><b>Full *URI:</b> Complete URI information.  <code>http.request.full_uri contains "admin"</code> <span class="notePiccole">*URI: Uniform Resource Identifier.</span></li>
+                        <li>Host: Hostname of the server  <code>http.host contains "keyword"     http.host == "keyword" </code></li>
+                        <li><b>Server:</b> Server service name.  <code>   http.server contains "apache"</code></li>
+                        <li><b>Connection:</b> Connection status.  <code>   http.connection == "Keep-Alive"</code></li>
+                        <li><b>Line-based text data:</b> Cleartext data provided by the server. <code> data-text-lines contains "keyword"</code></li>
+                        <li><b>HTML Form URL Encoded:</b> Web form information.</li>
+                        </ul></li>
+                    </ul>
+
+        </div>   
+        <div class="step-container">
+            <h3>Status Codes:</h3>
+            <ul><li>200 OK: Request successful.</li>   										
+                <li>301 Moved Permanently: Resource is moved to a new URL/path (permanently).</li>
+                <li>302 Moved Temporarily: Resource is moved to a new URL/path (temporarily).</li>
+                <li>400 Bad Request: Server didn't understand the request.</li>
+                <li>401 Unauthorised: URL needs authorisation (login, etc.).</li>
+                <li>403 Forbidden: No access to the requested URL. </li>
+                <li>404 Not Found: Server can't find the requested URL.</li>
+                <li>405 Method Not Allowed: Used method is not suitable or blocked.</li>
+                <li>408 Request Timeout:  Request look longer than server wait time.</li>
+                <li>500 Internal Server Error: Request not completed, unexpected error.</li>
+                <li>503 Service Unavailable: Request not completed server or service is down.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="sub-container">
+    <h2>User Agent Analysis</h2>
+    <p>As the adversaries use sophisticated technics to accomplish attacks, they try to leave traces similar to natural traffic through the known and trusted protocols. For a security analyst, it is important to spot the anomaly signs on the bits and pieces of the packets. The "user-agent" field is one of the great resources for spotting anomalies in HTTP traffic. In some cases, <span class="mark2"> adversaries successfully modify the user-agent data, which could look super natural.</span> A security analyst cannot rely only on the user-agent field to spot an anomaly. Never whitelist a user agent, even if it looks natural. User agent-based anomaly/threat detection/hunting is an additional data source to check and is useful when there is an obvious anomaly. If you are unsure about a value, you can conduct a web search to validate your findings with the default and normal user-agent info (example site).</p>
+     <div class="flex-container">
+        <div class="step-container">
+            <ul>
+                <li><b>Global search:</b><code>http.user_agent</code></li>
+                <li><b>Research outcomes for grabbing the low-hanging fruits:</b><br><code>(http.user_agent contains "sqlmap") or (http.user_agent contains "Nmap") or (http.user_agent contains "Wfuzz") or (http.user_agent contains "Nikto")</code></li>
+            </ul>
+            <p>Different user agent information from the same host in a short time notice. | Non-standard and custom user agent info. | Subtle spelling differences. ("Mozilla" is not the same as  "Mozlilla" or "Mozlila") | Audit tools info like Nmap, Nikto, Wfuzz and sqlmap in the user agent field.| Payload data in the user agent field.</p>
+        </div>
+        <div class="step-container">
+            <h2>Log4j Analysis</h2>
+            <p>A proper investigation starts with prior research on threats and anomalies going to be hunted. Let's review the knowns on the <span class="mark1">"Log4j" attack</span> before launching Wireshark.</p>
+            <ul>
+                <li>The attack starts with a<b> "POST" request</b></li>
+                <li>There are known cleartext patterns: <b>"jndi:ldap" and "Exploit.class"</b>.</li>
+                <li>Non dimenticare di fare <b>Follow HTTP Stream</b>, di inserire nuove colonne con filtri mirati (per esempio: http.user_agent)</li>
+            </ul>
+            <ol>
+                <li><code> http.request.method == "POST" </code></li>
+                <li><ul>
+                    <li><code> (ip contains "jndi") or ( ip contains "Exploit")</code></li>
+                	<li><code>(frame contains "jndi") or ( frame contains "Exploit")</code></li>
+		            <li><code>(http.user_agent contains "$") or (http.user_agent contains "==") </code></li>
+                    </ul></li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
