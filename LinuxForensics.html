@@ -1,0 +1,288 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Linux Forensics</title>
+<meta name="description" content="Linux Forensics">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Linux Forensics</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#OS"  class="button-link">OS and account information</a>
+        <a href="#SysConf"  class="button-link">System Configuration</a>        
+        <a href="#Pers"  class="button-link">Persistence mechanisms</a>  
+        <a href="#crontab"  class="button-link">Cron jobs</a>  
+        <a href="#startup"  class="button-link">Service startup</a>  
+        <a href="#bashrc"  class="button-link">.Bashrc</a>  
+        
+        
+        <a href="#Evid"  class="button-link">Evidence of Execution</a>  
+        <a href="#sudo"  class="button-link">Sudo execution history</a>  
+        <a href="#bash"  class="button-link">Bash history</a> 
+        
+        <a href="#Sys"  class="button-link">Syslog</a> 
+        <a href="#Auth"  class="button-link">Auth logs</a> 
+        <a href="#Third"  class="button-link">Third-party logs</a> 
+      
+        </div>
+<div class="sub-container">
+    
+    <h2 id="OS">OS and account information</h2>     
+    <p>For a Linux system, everything is stored in a file. Therefore, to identify forensic artifacts, we will need to know the locations of these files and how to read them. Below, we will start by identifying System information on a Linux host.</p>
+    <ul>
+        <li><b>OS release information:</b> To find the OS release information, we can use the cat utility to read the file located at<code> /etc/os-release</code>.</li>
+        <li><b>User accounts: </b> The <code>/etc/passwd</code> file contains information about the user accounts that exist on a Linux system. We can use the cat utility to read this file.</li>        
+        <li><b>Group Information: </b> The <code>/etc/group</code> file contains information about the different user groups present on the host. It can be read using the cat utility.</li>
+        <li><b>Sudoers List:</b> A Linux host allows only those users to elevate privileges to sudo, which are present in the Sudoers list. This list is stored in the file<code> /etc/sudoers</code> and can be read using the cat utility. You will need to elevate privileges to access this file.</li>
+        <li><b>Login information:</b> In the <code>/var/log</code> directory, we can find log files of all kinds including wtmp and btmp. The btmp file saves information about failed logins, while the wtmp keeps historical data of logins. These files are not regular text files that can be read using cat, less or vim; instead, they are binary files, which have to be read using the last utility. You can learn more about the last utility by reading its man page.</li>
+        <li><b>Authentication logs:</b>Every user that authenticates on a Linux host is logged in the auth log. The auth log is a file placed in the location <code>/var/log/auth.log</code>. It can be read using the cat utility, however, given the size of the file, we can use tail, head, more or less utilities to make it easier to read.</li>
+    </ul>
+    <h3>User accounts:</h3>
+    <p>The output of <code>/etc/passwd</code> contains 7 colon-separated fields, describing username, password information, user id (uid), group id (gid), description, home directory information, and the default shell that executes when the user logs in. It can be noticed that just like Windows, the user-created user accounts have uids 1000 or above. You can use the following command to make it more readable:</p>
+    <code>cat /etc/passwd| column -t -s :</code><br>    
+    <code>        
+user@machine$cat /etc/passwd| column -t -s :    <--- i  due punti ci vogliono nel cmd!<br>
+root                  x  0      0      root                                /root                    /bin/bash<br>
+daemon                x  1      1      daemon                              /usr/sbin                /usr/sbin/nologin<br>
+bin                   x  2      2      bin                                 /bin                     /usr/sbin/nologin<br>
+sys                   x  3      3      sys                                 /dev                     /usr/sbin/nologin<br>
+sync                  x  4      65534  sync                                /bin                     /bin/sync<br>
+games                 x  5      60     games                               /usr/games               /usr/sbin/nologin<br>
+....<br>
+ubuntu                x  1000   1000   Ubuntu                              /home/ubuntu             /bin/bash<br>
+pulse                 x  123    130    PulseAudio daemon,,,                /var/run/pulse           /usr/sbin/nologin<br>
+tryhackme             x  1001   1001   tryhackme,,,                        /home/tryhackme          /bin/bash<br>
+<br>
+</code>
+<p>In the above command, we can see the information for the user ubuntu. The username is ubuntu, its password information field shows x, which signifies that the password information is stored in the <code>/etc/shadow</code> file. The uid of the user is 1000. The gid is also 1000. The description, which often contains the full name or contact information, mentions the name Ubuntu. The home directory is set to /home/ubuntu, and the default shell is set to /bin/bash.</p>
+    <h3>Group information</h3>
+    <code>
+user@machine$ cat /etc/group<br>
+root:x:0:<br>
+daemon:x:1:<br>
+bin:x:2:<br>
+sys:x:3:<br>
+adm:x:4:syslog,ubuntu<br>
+tty:x:5:syslog<br>
+    </code>
+    <p>We can see that the user ubuntu belongs to the adm group, which has a password stored in the /etc/shadow file, signified by the x character. The gid is 4, and the group contains 2 users, Syslog, and ubuntu.</p>
+    <h3>Sudoers list</h3>
+    <code>
+user@machine$ sudo cat /etc/sudoers<br>
+#<br>
+# This file MUST be edited with the 'visudo' command as root.<br>
+#<br>
+# Please consider adding local content in /etc/sudoers.d/ instead of<br>
+# directly modifying this file.<br>
+#<br>
+# See the man page for details on how to write a sudoers file.<br>
+#<br>
+Defaults	env_reset<br>
+Defaults	mail_badpass<br>
+Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"<br>
+<br>
+# Host alias specification<br>
+<br>
+# User alias specification<br>
+<br>
+# Cmnd alias specification<br>
+<br>
+# User privilege specification<br>
+root	ALL=(ALL:ALL) ALL<br>
+<br>
+# Members of the admin group may gain root privileges<br>
+%admin ALL=(ALL) ALL<br>
+<br>
+# Allow members of group sudo to execute any command<br>
+%sudo	ALL=(ALL:ALL) ALL<br>
+<br>
+# See sudoers(5) for more information on "#include" directives:<br>
+<br>
+#includedir /etc/sudoers.d<br>
+    </code>
+    <h3>Login information</h3>
+<p>man last  <---  per conoscere meglio il comando</p>
+<code>
+user@machine$ sudo last -f /var/log/wtmp<br>
+reboot   system boot  5.4.0-1029-aws   Tue Mar 29 17:28   still running<br>
+reboot   system boot  5.4.0-1029-aws   Tue Mar 29 04:46 - 15:52  (11:05)<br>
+reboot   system boot  5.4.0-1029-aws   Mon Mar 28 01:35 - 01:51 (1+00:16)<br>
+<br>
+wtmp begins Mon Mar 28 01:35:10 2022<br>
+</code>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="SysConf">System Configuration</h2>
+    <ul>
+        <li><b>Hostname:</b> The hostname is stored in the /etc/hostname file on a Linux Host. It can be accessed using the cat utility.</li>
+        <li><b>Timezone:</b>Timezone information is a significant piece of information that gives an indicator of the general location of the device or the time window it might be used in. Timezone information can be found at the location /etc/timezone and it can be read using the cat utility.</li>
+        <li><b>Network Configuration:</b>To find information about the network interfaces, we can cat the /etc/network/interfaces file. The output on your machine might be different from the one shown here, depending on your configuration.<ul>
+            <li>Similarly, to find information about the MAC and IP addresses of the different interfaces, we can use the ip utility. To learn more about the ip utility, we can see its man page. 
+<code>ip address show </code></li></ul></li>
+        <li><b>Active network connections:</b> We can use the netstat utility to find active network connections on a Linux host. We can learn more about the netstat utility by reading its man page.<ul>
+            <li><code>netstat -natp</code><br> Il comando 'netstat -natp' mostra le connessioni di rete attive. Le opzioni significano:
+<ul><li><i>'n':</i> mostra gli indirizzi IP e le porte in forma numerica,</li>
+    <li><i>'a':</i> mostra tutte le connessioni e le porte in ascolto,</li>
+    <li><i>'t':</i> visualizza solo le connessioni TCP,</li>
+    <li><i>'p':</i> mostra il PID e il nome del processo associato a ciascuna connessione.</li></ul></li></ul></li>
+        <li><b>Running processes:</b> The ps utility shows details about the running processes. To find out about the ps utility, we can use the man page.<code>ps aux</code></li>
+        <li><b>DNS information:</b> The file <code>/etc/hosts</code> contains the configuration for the DNS name assignment. We can use the cat utility to read the hosts file. To learn more about the hosts file, we can use the man page (man hosts)</li>
+    </ul>
+
+    <code>
+cat /etc/hosts<br>
+127.0.0.1 localhost<br>
+<br>
+# The following lines are desirable for IPv6 capable hosts<br>
+::1 ip6-localhost ip6-loopback<br>
+fe00::0 ip6-localnet<br>
+ff00::0 ip6-mcastprefix<br>
+ff02::1 ip6-allnodes<br>
+ff02::2 ip6-allrouters<br>
+ff02::3 ip6-allhosts<br>
+    </code>
+<p>The information about DNS servers that a Linux host talks to for DNS resolution is stored in the resolv.conf file. Its location is /etc/resolv.conf. We can use the cat utility to read this file.</p>
+    <code>
+cat /etc/resolv.conf
+    </code>  
+<p><i>Per vedere vecchio hostnme (in caso di modifica)</i> </p>
+<code>sudo cat /var/log/syslog* | grep "hostname"<br>
+-->Jan  6 21:41:19 Linux4n6 NetworkManager[573]: < info >  [1767717679.7927] hostname: hostname changed from (none) to "Linux4n6"</code>
+<br>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="Pers">Persistence mechanisms</h2>
+    <p id="crontab"><b>Cron jobs:</b> Cron jobs are commands that run periodically after a set amount of time. A Linux host maintains a list of Cron jobs in a file located at <code>/etc/crontab</code>. We can read the file using the cat utility.</p>
+<code>
+user@machine$ cat /etc/crontab <br>
+# /etc/crontab: system-wide crontab<br>
+# Unlike any other crontab you don't have to run the `crontab'<br>
+# command to install the new version when you edit this file<br>
+# and files in /etc/cron.d. These files also have username fields,<br>
+# that none of the other crontabs do.<br>
+<br>
+SHELL=/bin/sh<br>
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin<br>
+<br>
+# Example of job definition:<br>
+# .---------------- minute (0 - 59)<br>
+# |  .------------- hour (0 - 23)<br>
+# |  |  .---------- day of month (1 - 31)<br>
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...<br>
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat<br>
+# |  |  |  |  |<br>
+# *  *  *  *  * user-name command to be executed<br>
+17 *	* * *	root    cd / && run-parts --report /etc/cron.hourly<br>
+25 6	* * *	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )<br>
+47 6	* * 7	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )<br>
+52 6	1 * *	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )<br>
+#<br>
+</code>
+<p id="startup"><b>Service startup:</b> Like Windows, services can be set up in Linux that will start and run in the background after every system boot. A list of services can be found in the <code>/etc/init.d </code>directory. We can check the contents of the directory by using the ls utility.</p>
+<p id=".bashrc"><b>.Bashrc:</b> When a bash shell is spawned, it runs the commands stored in the .bashrc file. This file can be considered as a startup list of actions to be performed. Hence it can prove to be a good place to look for persistence. </p>
+<p>The following terminal shows an example .bashrc file.</p>
+<code>    
+cat ~/.bashrc<br>
+# ~/.bashrc: executed by bash(1) for non-login shells.<br>
+# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)<br>
+# for examples<br>
+<br>
+# If not running interactively, don't do anything<br>
+case $- in<br>
+    *i*) ;;<br>
+      *) return;;<br>
+esac<br>
+<br>
+# set variable identifying the chroot you work in (used in the prompt below)<br>
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then<br>
+    debian_chroot=$(cat /etc/debian_chroot)<br>
+fi<br>
+<br>
+# set a fancy prompt (non-color, unless we know we "want" color)<br>
+case "$TERM" in<br>
+    xterm-color|*-256color) color_prompt=yes;;<br>
+esac<br>
+<br>
+# If this is an xterm set the title to user@host:dir<br>
+case "$TERM" in<br>
+xterm*|rxvt*)<br>
+    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"<br>
+    ;;<br>
+*)<br>
+    ;;<br>
+esac<br>
+<br>
+# Add an "alert" alias for long running commands.  Use like so:<br>
+#   sleep 10; alert<br>
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'<br>
+<br>
+# Alias definitions.<br>
+# You may want to put all your additions into a separate file like<br>
+# ~/.bash_aliases, instead of adding them here directly.<br>
+# See /usr/share/doc/bash-doc/examples in the bash-doc package.<br>
+<br>
+if [ -f ~/.bash_aliases ]; then<br>
+    . ~/.bash_aliases<br>
+fi<br>
+<br>
+# enable programmable completion features (you don't need to enable<br>
+# this, if it's already enabled in /etc/bash.bashrc and /etc/profile<br>
+# sources /etc/bash.bashrc).<br>
+if ! shopt -oq posix; then<br>
+  if [ -f /usr/share/bash-completion/bash_completion ]; then<br>
+    . /usr/share/bash-completion/bash_completion<br>
+  elif [ -f /etc/bash_completion ]; then<br>
+    . /etc/bash_completion<br>
+  fi<br>
+fi<br>
+</code>
+<p>System-wide settings are stored in <code>/etc/bash.bashrc</code> and <code>/etc/profile</code> files, so it is often a good idea to take a look at these files as well.</p>
+<a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>    
+    <h2 id="Evid">Evidence of Execution</h2>
+    <p>Knowing what programs have been executed on a host is one of the main purposes of performing forensic analysis. On a Linux host, we can find the evidence of execution from the following sources.</p>
+    <p id="sudo"><b>Sudo execution history:</b> All the commands that are run on a Linux host using sudo are stored in the auth log. We can use the grep utility to filter out only the required information from the auth log.</p>
+    <code>cat /var/log/auth.log* |grep -i COMMAND|tail</code>
+    <p id="bash"><b>Bash history:</b> Any commands other than the ones run using sudo are stored in the bash history. Every user's bash history is stored separately in that user's home folder. Therefore, when examining bash history, we need to get the bash_history file from each user's home directory. It is important to examine the bash history from the root user as well, to make note of all the commands run using the root user as well.</p>
+    <code>cat ~/.bash_history </code>
+    <p><b>Files accessed using vim:</b> The Vim text editor stores logs for opened files in Vim in the file named .viminfo in the home directory. This file contains command line history, search string history, etc. for the opened files. We can use the cat utility to open .viminfo.
+        <code>cat ~/.viminfo</code>
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="Log">Log Files</h2>
+<p>Logs are generally found in the /var/log directory.</p>
+<p id="Sys"><b>Syslog:</b> The Syslog contains messages that are recorded by the host about system activity.<br>
+We can use the cat utility to view the Syslog, which can be found in the file /var/log/syslog. Since the Syslog is a huge file, it is easier to use tail, head, more or less utilities to help make it more readable.<br>
+<code>cat /var/log/syslog* | head</code><br>
+The above terminal shows the system time, system name, the process that sent the log [the process id], and the details of the log. We can see a couple of cron jobs being run here in the logs above, apart from some other activity. We can see an asterisk(*) after the syslog. This is to include rotated logs as well. With the passage of time, the Linux machine rotates older logs into files such as syslog.1, syslog.2 etc, so that the syslog file doesn't become too big. In order to search through all of the syslogs, we use the asterisk(*) wildcard.
+<br><i>da cercare con grep CRON</i></p>
+<p id="Auth"><b>Auth logs</b> The auth logs contain information about users and authentication-related logs.  <br>
+We can see above that the log stored information about the creation of a new group, a new user, and the addition of the user into different groups.
+<br><i>da cercare con grep parola chiave add , new user, new group etc </i></p>
+<p id="Third"><b>Third-party logs</b> the /var/log/ directory contains logs for third-party applications such as webserver, database, or file share server logs.<br>
+<code>ls /var/log     </code><br>
+We can find the apache logs in the apache2 directory and samba logs in the samba directory.<br>
+Similarly, if any database server like MySQL is installed on the system, we can find the logs in this directory.</p>
+    
+
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+
+</div>
+
+</body>
+</html>

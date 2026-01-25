@@ -191,6 +191,21 @@ code{
 .mark2{
     background-color: #a7ffa4;
 }
+.disclaimer{
+    background-color: #dafd78;
+    border-radius:10px;
+    color:#c12e2a;
+    font-size: 0.6rem;
+    margin-right:10px;
+    margin-left:10px;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+    
+}
+
+td.EventID{
+    background-color:#eeff91;
+    text-decoration: underline;
+}
 
 
 

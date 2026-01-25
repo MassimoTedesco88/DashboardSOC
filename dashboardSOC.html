@@ -11,7 +11,11 @@
 <body>
 
     <h1>SOC DASHBOARD di Massimo</h1>
-    
+    <div class="disclaimer">
+        <p><b>! Disclaimer:</b> All information provided within this dashboard is intended solely for the analysis and monitoring of the user’s own home network and website, as well as for educational purposes such as participating in Capture The Flag (CTF) challenges (e.g., on platforms like TryHackMe), with the goal of identifying potential vulnerabilities and implementing appropriate corrective actions. 
+The tools and information referenced herein must be used responsibly and exclusively on systems owned by or explicitly authorized to the user, or within legally permitted training environments. Any improper or unauthorized use of these tools may cause harm to third parties and to the user themselves, and may also result in violations of applicable laws and regulations.
+Use with caution and always ensure compliance with legal and ethical standards.<br></p>
+    </div>
     <div class="search">
         <form action="https://duckduckgo.com/" method="get" target="_blank">
             <input type="text" name="q" placeholder="Search with DuckDuckGo" 
@@ -19,28 +23,39 @@
             <input type="submit" value="Search" style="padding: 8px;">
         </form>
     </div>
-    <div class="links">
+    <div class="links">       
+        <span>Extra Tools > > </span> 
+        <a href="phishing_analysis_tools.html" target="_blank"  class="button-link blau-button" title="PhishingAnalysisTool">PhishingAnalysisTool</a>             
+        <a href="WebAppAnalysis.html" target="_blank" class="button-link green-button" title="webApps">WebApps analysis (1/3)</a>
+        <a href="WebAppAnalysis2.html" target="_blank" class="button-link green-button" title="webApps">WebApps analysis (2/3)</a>
+        <a href="WebAppAnalysis3.html" target="_blank" class="button-link green-button" title="webApps">WebApps analysis (3/3)</a>
+        <a href="https://www.ultimatewindowssecurity.com/securitylog/encyclopedia/" target="_blank" class="button-link1" title="Event ID database">Windows Event ID</a>
         
-        <a href="phishing_analysis_tools.html" target="_blank"  class="button-link blau-button" title="PhishingAnalysisTool">PhishingAnalysisTool</a>
-        <a href="PerimeterLogs.html" target="_blank" class="button-link green-button" title="PerimeterLogs">Perimeter Logs</a>
-        <a href="LinuxCMD.html" target="_blank" class="button-link green-button" title="LinuxCMD">Linux</a>
-        <a href="WiresharkFilters.html" target="_blank" class="button-link green-button" title="WiresharkFilters">Wireshark</a>
-        <a href="snort.html" target="_blank" class="button-link1 green-button" title="Snort">SNORT</a>
         
     </div>
     <div class="links">
+        <span>Log & Packet analysis > > </span>
         <a href="detectionDataExfil.html" target="_blank" class="button-link yellow-button" title="DataExfil">DataExfil Detection</a>
         <a href="detectionMITM.html" target="_blank" class="button-link yellow-button" title="mitm">MITM Detection</a>
         <a href="detectionWebAttacks.html" target="_blank" class="button-link yellow-button" title="webattacks">Web Attacks Detection</a>
         <a href="detectionWebShells.html" target="_blank" class="button-link yellow-button" title="webshells">Web Shells Detection</a>
+        <a href="PerimeterLogs.html" target="_blank" class="button-link green-button" title="PerimeterLogs">Perimeter Logs</a>
+        <a href="WiresharkFilters.html" target="_blank" class="button-link green-button" title="WiresharkFilters">Wireshark</a>
     </div>
     <div class="links">
+        <span>Windows Section > > </span>
         <a href="CoreWinProcesses.html" target="_blank" class="button-link1 green-button" title="WinProcesses">Win Processes</a>
         <a href="WinEventLogs.html" target="_blank" class="button-link1 green-button" title="WinLog">Win Event Logs</a>
         <a href="Sysmon.html" target="_blank" class="button-link1 green-button" title="Sysmon">Sysmon</a>
+        <a href="WinSecMon.html" target="_blank" class="button-link1 green-button" title="WinSecMon">Windows Security Monitoring</a>
+    </div><div class="links">
+        <span>Linux > > </span>
+        <a href="LinuxCMD.html" target="_blank" class="button-link green-button" title="LinuxCMD">Linux</a>
+        <a href="LinuxSecMon.html" target="_blank" class="button-link1 green-button" title="LinuxSecMon">Linux Security Monitoring</a>
+        <a href="LinuxForensics.html" target="_blank" class="button-link green-button" title="webApps">Linux Forensics</a>
     </div>
     <hr>
-    <div class="links">
+    <div class="links">        
         <a href="https://chatgpt.com" target="_blank" class="button-link1" title="ChatGPT — conversational AI">ChatGPT</a>
         <a href="https://pentest-tools.com/website-vulnerability-scanning/website-scanner" target="_blank" class="button-link1" title="website-scanner">Website-scanner</a>        
         <a href="https://www.whois.com/whois/" target="_blank" class="button-link1" title="Look up domain information">WHOIS</a>
@@ -52,8 +67,14 @@
         <a href="https://crackstation.net" target="_blank" class="button-link1" title="CrackStation — hash cracking">Hash Cracker</a>
         <a href="https://haveibeenpwned.com/Passwords" target="_blank" class="button-link1" title="Known compromised passwords">Pwned Passwords</a>
         <a href="https://threatmap.checkpoint.com" target="_blank" class="button-link1" title="Cyber attack map in real time">Threat Map</a>
-        <a href="https://www.exploit-db.com" target="_blank" class="button-link1" title="Exploit and vulnerability database">ExploitDB</a>
-        
+        <a href="https://www.exploit-db.com" target="_blank" class="button-link1" title="Exploit and vulnerability database">ExploitDB</a>        
+    </div>
+    <div class="links">
+        <span>Web-App Analysis Tools > > </span>
+        <a href="https://www.techtarget.com/whatis/definition/Google-dork-query" target="_blank" class="button-link1" title="google">Google hacking / Dorking</a>
+        <a href="https://www.wappalyzer.com/" target="_blank" class="button-link1" title="wappalyzer">Identify technologies Websites</a>
+        <a href="https://archive.org/web/" target="_blank" class="button-link1" title="archive">Historical archive of websites</a>
+        <a href="https://crt.sh/" target="_blank" class="button-link1" title="dbcert"> Database of certificates</a>
     </div>
 
 </body>
