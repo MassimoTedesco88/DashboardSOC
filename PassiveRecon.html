@@ -1,0 +1,132 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Passive Recon</title>
+<meta name="description" content="Passive Recon">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>[Passive Reconnaissance]</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#whois"  class="button-link">Whois</a>
+		<a href="#nslookup"  class="button-link">nslookup & dig</a> 
+        <a href="#dnsdumpster"  class="button-link">DNSDumpster</a>       
+        <a href="#shodan"  class="button-link">Shodan.io</a>      
+        </div>
+<div class="sub-container">    
+    <h2 id="whois">WHOIS</h2> 
+    <p>A WHOIS server listens on TCP port 43 for incoming requests.<br>The WHOIS server replies with various information related to the domain requested. Of particular interest, we can learn:
+<br></p>   
+    <ul>
+        <li><i>Registrar</i> -  Via which registrar was the domain name registered?
+</li>
+        <li><i>Contact info of registrant</i> -  Name, organization, address, phone, among other things. (unless made hidden via a privacy service)
+</li>
+        <li><i>Creation, update, and expiration dates</i> - When was the domain name first registered? When was it last updated? And when does it need to be renewed?
+</li>
+        <li><i>Name Server</i> - Which server to ask to resolve the domain name?</li>
+    </ul>
+    <p><b>Example : </b>whois tryhackme.com OR
+    <a href="https://www.whois.com/whois/" target="_blank"  title="Look up domain information">WHOIS</a></p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>	
+    <hr>
+	    <h2 id="nslookup">nslookup & dig</h2> 
+    <p> Find the IP address of a domain name using nslookup, which stands for Name Server Look Up.<br></p>
+<b>For example:</b><code> nslookup tryhack.me</code><br>
+<code>nslookup OPTIONS DOMAIN_NAME SERVER</code> <p>These three main parameters are:</p>
+<ul>
+<li><b>OPTIONS</b> contains the query type as shown in the table below. For instance, you can use A for IPv4 addresses and AAAA for IPv6 addresses.
+</li>
+<li><b>DOMAIN_NAME</b> is the domain name you are looking up.
+</li>
+<li><b>SERVER</b> is the DNS server that you want to query. You can choose any local or public DNS server to query. Cloudflare offers 1.1.1.1 and 1.0.0.1, Google offers 8.8.8.8 and 8.8.4.4, and Quad9 offers 9.9.9.9 and 149.112.112.112</li>
+</ul>
+<p><i>Query type	+	Result</i><br>
+<b>A</b>	IPv4 Addresses<br> <b>AAAA</b>	IPv6 Addresses <br>
+<b>CNAME</b>	Canonical Name<br><b>MX</b>	Mail Servers<br>
+<b>SOA</b>	Start of Authority<br><b>TXT</b>	TXT Records<br>
+<br> For instance, <code>nslookup -type=A tryhackme.com 1.1.1.1 </code> (or <code>nslookup -type=a tryhackme.com 1.1.1.1</code>as it is case-insensitive) can be used to return all the IPv4 addresses used by tryhackme.com.<br>
+<i>Result: </i> <code><br>
+Server:1.1.1.1   <br>
+Address:1.1.1.1#53  <br>
+<br>
+Non-authoritative answer:<br>
+Name:	tryhackme.com<br>
+Address: 172.67.69.208<br>
+Name:	tryhackme.com<br>
+Address: 104.26.11.229<br>
+Name:	tryhackme.com<br>
+Address: 104.26.10.229<br>
+</code>
+Let’s say you want to learn about the email servers and configurations for a particular domain. You can issue <i>nslookup -type=MX tryhackme.com </i>. Here is an example:<br>
+<code>
+Server:		127.0.0.53<br>
+Address:	127.0.0.53#53<br>
+<br>
+Non-authoritative answer:<br>
+tryhackme.com	mail exchanger = 5 alt1.aspmx.l.google.com.<br>
+tryhackme.com	mail exchanger = 1 aspmx.l.google.com.<br>
+tryhackme.com	mail exchanger = 10 alt4.aspmx.l.google.com.<br>
+tryhackme.com	mail exchanger = 10 alt3.aspmx.l.google.com.<br>
+tryhackme.com	mail exchanger = 5 alt2.aspmx.l.google.com.<br>
+</code>
+We can see that tryhackme.com’s current email configuration uses Google. Since MX is looking up the Mail Exchange servers, we notice that when a mail server tries to deliver email @tryhackme.com, it will try to connect to the aspmx.l.google.com, which has order 1. If it is busy or unavailable, the mail server will attempt to connect to the next in order mail exchange servers, alt1.aspmx.l.google.com or alt2.aspmx.l.google.com.
+<br>
+Google provides the listed mail servers; therefore, we should not expect the mail servers to be running a vulnerable server version. However, in other cases, we might find mail servers that are not adequately secured or patched.
+<br>
+<b>Note:</b> <br>
+You can repeat similar queries for other domain names and try different types, such as -type=txt
+<br>
+For more advanced DNS queries and additional functionality, you can use <b>dig</b>, the acronym for “Domain Information Groper” 
+<br>
+We can use <code>dig DOMAIN_NAME</code>, but to specify the record type, we would use dig DOMAIN_NAME TYPE. Optionally, we can select the server we want to query using dig @SERVER DOMAIN_NAME TYPE.
+<br><i>SERVER</i> is the DNS server that you want to query.
+<br><i>DOMAIN_NAME</i> is the domain name you are looking up.
+<br><i>TYPE</i> contains the DNS record type, as shown in the table provided earlier.
+<br>
+<code>
+dig tryhackme.com MX<br>
+<br>
+; <<>> DiG 9.16.19-RH <<>> tryhackme.com MX<br>
+;; global options: +cmd<br>
+;; Got answer:<br>
+;; ->>HEADER< <br>
+</code>
+If you want to query a 1.1.1.1 DNS server, you can execute dig @1.1.1.1 tryhackme.com MX
+</p>
+
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>	
+    <hr>
+	<h2 id="dnsdumpster">DNSDumpster</h2> 
+    <p>Per cercare subdomains</p>
+	<a href="https://dnsdumpster.com/" target="_blank"  title="dnsdumpster">DNSDumpster</a></p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>	
+    <hr>
+	<h2 id="shodan">Shodan.io</h2> 
+    <p>Shodan can be helpful to learn various pieces of information about the client’s network, without actively connecting to it. Furthermore, on the defensive side, you can use different services from Shodan.io to learn about connected and exposed devices belonging to your organization.
+Searching for tryhackme.com on Shodan.io will display at least the record shown in the screenshot above. Via this Shodan.io search result, we can learn several things related to our search, such as:<br>
+<i>IP address; hosting company; geographic location; server type and version.</i><br>
+<a href="https://www.shodan.io/" target="_blank"  title="shodan">Shodan.io</a></p>
+<br>
+Cercando servizi tipo apache, nginx, possiamo conoscere quale porta è la più usata per tale servizio o il paese dove viene più usato
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>	
+    <hr>
+	
+</div>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Ports</title>
+<meta name="description" content="Ports">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>[Porte Fondamentali]</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#100"  class="button-link">1xx informational response</a>
+        <a href="#200"  class="button-link">2xx success</a> 
+        <a href="#300"  class="button-link">3xx redirection</a>  
+        <a href="#400"  class="button-link">4xx client error</a>            
+		<a href="#500"  class="button-link">5xx server error</a>            
+        </div>
+<div class="sub-container">  
+	<h2>Porte Fondamentali, utili per CTF:</h2>
+<p>
+<b>Web</b> Nei CTF spesso trovi pannelli admin, API o servizi nascosti qui.<br>
+<i>80</i> (HTTP) → traffico web non cifrato<br>
+<i>443</i> (HTTPS) → web sicuro (SSL/TLS)<br>
+<i>8080 / 8000</i> → web alternativi / dev server<br>
+<br>
+<b>Accesso remoto</b> SSH è una delle porte più attaccate/bruteforzate.<br>
+<i>22</i> (SSH) → login remoto Linux<br>
+<i>23</i> (Telnet) → vecchio e insicuro (ma nei CTF appare spesso!)<br>
+<i>3389 </i>(RDP) → desktop remoto Windows<br>
+<br>
+<b>File transfer</b> FTP anonimo (username: anonymous, password: qualsiasi cosa e il server potrebbe lasciarti entrare)<br>
+<i>21 </i>(FTP) → trasferimento file (spesso mal configurato)<br>
+<i>20 </i>(FTP data)<br>
+<i>69 </i>(TFTP) → versione semplice (senza auth)<br>
+<br>
+<b>Email</b><br>
+<i>25 </i>(SMTP) → invio email<br>
+<i>110 </i>(POP3) → ricezione (vecchio)<br>
+<i>143</i> (IMAP) → gestione mailbox<br>
+<i>465 / 587 / 993 / 995</i> → versioni sicure<br>
+<br>
+<b>Database</b> Se esposti = spesso vulnerabilità o credenziali deboli.<br>
+<i>3306</i> (MySQL)<br>
+<i>5432</i> (PostgreSQL)<br>
+<i>1433</i> (Microsoft SQL Server)<br>
+<i>27017</i> (MongoDB)<br>
+<br>
+<b>Networking / infrastruttura</b><br>
+<i>53 </i>(DNS) → risoluzione nomi<br>
+<i>67/68</i> (DHCP) → assegnazione IP<br>
+<i>123</i> (NTP) → sincronizzazione oraria<br>
+<br>
+<b>Condivisione file / Windows</b> SMB è una miniera nei CTF (enum, exploit, ecc.)<br>
+<i>139 </i>(NetBIOS)<br>
+<i>445</i> (SMB)<br>
+<br>
+<b>Altre importanti</b><br>
+<i>111</i> (RPCbind) → servizi RPC<br>
+<i>135 </i>(MS RPC)<br>
+<i>6379</i> (Redis) → spesso senza auth <br>
+<i>9200 </i>(Elasticsearch) → spesso esposto<br>
+<i>25xx / 3000 / 5000 / 7001</i> → app custom<br>
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>	
+</div></div>
+</body>
+</html>

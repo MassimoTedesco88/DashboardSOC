@@ -1,0 +1,163 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>CaptureTheFlag</title>
+<meta name="description" content="Capture the flag">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Come affrontare gran parte delle CTF</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#enum"  class="button-link">ENUMERAZIONE</a>
+        <a href="#WebExpl"  class="button-link">WEB EXPLOITATION</a> 
+        <a href="#BruteForce"  class="button-link">CREDENTIAL ATTACKS & BRUTE FORCE</a>  
+		<a href="#Exploitation"  class="button-link">EXPLOITATION & SHELL</a>  
+		<a href="#Privilege"  class="button-link">PRIVILEGE ESCALATION</a>  
+		<a href="#Reverse"  class="button-link">REVERSE ENGINEERING & BINARY</a> 
+		<a href="#Network"  class="button-link">NETWORK & FORENSICS</a> 
+		<a href="#Script"  class="button-link">AUTOMATION & SCRIPTING</a> 
+		<a href="#Top10"  class="button-link">Top 10 MUST-HAVE</a> 
+		
+                 
+        </div>
+<div class="sub-container">    
+    <h2 id="enum">ENUMERAZIONE - <b>Fase più importante</b></h2> 
+    <p>Se fallisci qui, perdi la CTF - Non si può andare avanti nella ricerca. <b>Tool Fondamentali:</b><br></p>   
+    <ul>
+        <li><i>nmap</i> - Port scanning + service detection.</li>
+        <li><i>gobuster / dirsearch</i> - Directory brute-force web.</li>
+        <li><i>nikto</i> - Vulnerability scanner web.</li>        
+    </ul>    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+    <h2 id="WebExpl">WEB EXPLOITATION</h2>
+	<p>Molte room sono web-based. <b>Tool Fondamentali:</b><br></p>   
+    <ul>
+        <li><i>Burp Suite</i> - Intercetta richieste HTTP e Manipolazione parametri.</li>
+        <li><i>curl</i> - Test rapido endpoint. </li>
+        <li><i>browser dev tools</i> - JS analysis, cookies, storage.</li>        
+    </ul>    
+	<p><i>Burp è praticamente obbligatorio per XSS, IDOR, auth bypass.</i></p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="BruteForce">CREDENTIAL ATTACKS & BRUTE FORCE</h2>
+	<p><b>Tool Importanti:</b><br></p>   
+    <ul>
+        <li><i>Hydra</i> - Brute force login (SSH, FTP, HTTP).</li>
+        <li><i>hashcat</i> - Crack hash (MD5, SHA, bcrypt). </li>
+        <li><i>john the ripper</i> - Alternativa per password cracking.</li>        
+    </ul>    	
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>	 
+	<h2 id="Exploitation">EXPLOITATION & SHELL</h2>
+	<p><b>Tool Importanti:</b><br></p>   
+    <ul>
+        <li><i>netcat(nc)</i> - Reverse shell / listener.</li>
+        <li><i>Metasploit</i> - Exploit pronti + payload. </li>
+        <li><i>searchsploit</i> - Cerca exploit pubblici.</li>        
+    </ul>   	
+	
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="Privilege">PRIVILEGE ESCALATION (ROOT/USER)</h2>
+	<p><b>Tool Importanti:</b><br></p>   
+    <ul>
+        <li><i>linpeas / linenum</i> - Enumeration privilege escalation.</li>
+        <li><i>ps,sudo -l, find</i> - Manual Enumeration. </li>
+        <li><i>GTFOBins</i> - Tecniche di escalation.</li>        
+    </ul>   	
+	<p><i>Tantissime CTF finiscono qui (cronjob, SUID, sudo misconfig).</i></p>
+	
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="Reverse">REVERSE ENGINEERING & BINARY</h2>
+	<p><b>Tool Importanti:</b><br></p>   
+    <ul>
+        <li><i>Ghidra</i> </li>
+        <li><i>Radare2</i>  </li>
+        <li><i>strings</i></li>        
+		<li><i>ltrace / strace</i></li>        
+    </ul>   		
+	<p><i>Usati per crackme, binary exploitation.</i></p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="Network">NETWORK & FORENSICS</h2>
+	<p><b>Tool Importanti:</b><br></p>   
+    <ul>
+        <li><i>Wireshark</i> </li>
+        <li><i>tcpdump</i>  </li>
+        <li><i>binwalk</i></li>        
+		<li><i>foremost</i></li>        
+    </ul>   		
+	<p><i>Per traffico, file carving, steganografia..</i></p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="Script">AUTOMATION & SCRIPTING</h2>
+	<p><b>Tool Importanti:</b><br></p>   
+    <ul>
+        <li><i>Python</i> </li>
+        <li><i>Bash scripting</i>  </li>
+        
+    </ul>   		
+	<p><i>Exploit custom, parsing output, automation</i></p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="Top10">Top 10 MUST-HAVE</h2>
+	<p><b>Tool Importanti:</b><br></p>   
+    <ul>
+        <li><i>nmap</i> - <b>Scopo:</b> Scansione porte e servizi - <b>Scopre:</b> porte aperte, servizi (SSH, HTTP, FTP…), versioni vulnerabili  </li>
+        <li><i>gobuster</i> - <b>Scopo:</b> Scansione directory web - Se trovi HTTP <b>Scopre:</b> directory nascoste (/admin, /login), file sensibili</li>
+		<li><i>Burp Suite</i> - <b>Scopo:</b> Intercettare e modificare richieste HTTP - Per Web exploitation <b>Serve per:</b> XSS, SQLi, IDOR, bypass login </li> 
+		
+		<li><i>netcat</i> - <b>Scopo:</b> Gestire shell e connessioni - Dopo exploit <b>Serve per:</b> reverse shell, bind shell, listener </li>
+		<li><i>hydra</i> - <b>Scopo:</b> Brute force login - Quando hai username o servizio login <b>Supporta:</b> SSH, FTP, HTTP login </li>
+		<li><i>hashcat</i> - <b>Scopo:</b> Crack hash - Quando trovi hash <b>Supporta:</b> MD5, SHA, bcrypt </li>
+		<li><i>searchsploit</i> - <b>Scopo:</b> Cercare exploit pubblici - Dopo aver identificato servizio/versione </li>
+		<li><i>linpeas</i> - <b>Scopo:</b> Privilege escalation (Linux) - Dopo aver ottenuto accesso <b>Trova:</b> SUID, cron jobs, misconfigurazioni </li>
+		<li><i>python</i> - <b>Scopo:</b> Scripting e exploit custom</li>
+		<li><i>wireshark</i> - <b>Scopo:</b> Analisi traffico di rete - Forensics / challenge di rete <b>Serve per:</b> analizzare pacchetti, trovare credenziali, ricostruire traffico  </li>		        
+    </ul>   		
+	<p><i>Con questi copri la maggior parte delle challenge. Workflow (enumeration → exploit → escalate)</i></p>
+	<h3>WORKFLOW COMPLETO CTF</h3>
+	<ol>
+	<li>ENUMERAZIONE INIZIALE (Sempre) <ul><li><b>Nmap:</b> Appena ottieni IP; <b>Obiettivo:</b> Porte aperte, servizi attivi e versioni.</li></ul></li>
+	<li>Se trovi HTTP -> Enumerazione Web <ul><li><b>Gobuster:</b> Se Nmap mostra porta 80/443; <b>Obiettivo:</b> trovare entry point nascosti: <b>Cerchi:</b> /admin, /login, /uploads.</li><li><b>Burp Suite</b> dopo aver trovato pagine web;<b> Obiettivo:</b> Exploit vulnerabilità;<b> Usalo per:</b> login bypass, parametri tampering; XSS/SQLi</li></ul></li>
+	<li>Se trovi Login -> Attacchi credenziali<ul><li><b>Hydra:</b> hai login (SSH, FTP,web); <b>Obiettivo:</b> Ottenere accesso.</li><li><b>Hashcat</b> Trovi hash; <b>Obiettivo:</b> convertirli in password.</li></ul></li>
+	<li>Accesso alla macchina (Foothold)<ul><li><b>Netcat:</b> hai exploit o credenziali; <b>Obiettivo:</b> Ottenere shell.</li></ul></li>
+	<li>Dopo Accesso -> Privilege Escalation<ul><li><b>LinPEAS:</b> Appena hai una shell; <b>Obiettivo:</b> Diventare Root; <b>Cerca:</b> SUID, cron job, sudo misconfig.</li></ul></li>
+	<li>Se non hai Exploit -> Cerca Vulnerabilità<ul><li><b>Searchsploit:</b> Conosci servizio + versione; <b>Obiettivo:</b> Trovare exploit pronti.</li></ul></li>
+	<li>Automazione/Custom Exploit<ul><li><b>Python:</b> quando exploit non esiste o va adattato.</li></ul></li>
+	<li>(Se serve) Analisi avanzata<ul><li><b>Wireshark:</b> Challenge forensics/network; <b>Obiettivo:</b>analizzare traffico.</li></ul></li>
+	
+	</ol>
+	
+	
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+</div>
+
+</body>
+</html>

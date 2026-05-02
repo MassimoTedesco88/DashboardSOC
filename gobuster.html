@@ -1,0 +1,133 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>GOBUSTER</title>
+<meta name="description" content="gobuster">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>[GOBUSTER]</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#intro"  class="button-link">Introduction</a>
+        <a href="#dir"  class="button-link">Directory and File Enumeration</a> 
+        <a href="#sub"  class="button-link">Subdomain Enumeration</a>  
+        <a href="#vhost"  class="button-link">Vhost Enumeration</a>            
+        </div>
+<div class="sub-container">    
+    <h2 id="intro">Introduction</h2> 
+    <p>
+	Gobuster is an open-source offensive tool written in Golang. 
+	It enumerates web directories, DNS subdomains, vhosts, Amazon S3 buckets, and Google Cloud Storage by brute force, using specific wordlists and handling the incoming responses. Many security professionals use this tool for penetration testing, bug bounty hunting, and cyber security assessments. Looking at the phases of ethical hacking, we can place Gobuster between the reconnaissance and scanning phases.<br>
+	<b>Enumeration:</b> Enumeration is the act of listing all the available resources, whether they are accessible or not. For example, Gobuster enumerates web directories.<br>
+	<b>Brute Force:</b> Brute force is the act of trying every possibility until a match is found. It is like having ten keys and trying them all on a lock until one fits. Gobuster uses wordlists for this purpose.</p>
+	<p>
+	<code>gobuster --help</code><br>
+	<b>Flags:</b> These are specific options we can configure to customize our commands. <br>
+<i>Short Flag +	Long Flag +	Description</i><br>
+-t	--threads				This flag configures the number of threads to use for the scan. Each of these threads sends out requests with a slight delay. The default number of threads is 10. This number may be slow when using large wordlists. You can increase or decrease the number of threads depending on the available system resources.<br>
+-w	--wordlist				The flag configures a wordlist to use for iterating. Each wordlist entry is attached to the URL you included in the command.<br>
+	--delay					This flag defines the amount of time to wait between sending requests. Some web servers include mechanisms to detect enumeration by looking at how many requests are received in a certain period of time. We can increase the delay between subsequent requests to make it look like normal web traffic.<br>
+	--debug					This flag helps us to troubleshoot when our command gives unexpected errors.<br>
+-o	--output				This flag writes the enumeration results to a file we choose.<br>
+<br>
+<b>Example:</b><br>
+<code>gobuster dir -u "http://www.example.thm/" -w /usr/share/wordlists/dirb/small.txt -t 64</code><br>
+> <b>gobuster dir</b> indicates that we will use the directory and file enumeration mode.<br>
+> <b>-u "http://www.example.thm/"</b> tells Gobuster that the target URL is http://example.thm/(opens in new tab).<br>
+> <b>-w /usr/share/wordlists/dirb/small.txt</b> directs Gobuster to use the small.txt wordlist to brute force the web directories. Gobuster will use each entry in the wordlist to form a new URL and send a GET request to that URL. If the first entry of the wordlist were images, Gobuster would send a GET request to http://example.thm/images/.(opens in new tab)<br>
+> <b>-t 64</b> sets the number of threads Gobuster will use to 64. This improves the performance drastically.<br>
+	</p> 
+        <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="dir">Directory and File Enumeration</h2> 
+    <p>Gobuster is powerful because it allows you to scan the website and return the status codes. These status codes immediately tell you if you, as an outside user, can request that directory or not.	</p>   
+	<code>gobuster dir --help</code><br>
+<i>Flag + Long Fla				+ 	Description</i><br>
+-c	--cookies						This flag configures a cookie to pass along each request, such as a session ID.<br>
+-x	--extensions					This flag specifies which file extensions you want to scan for. E.g., .php, .js<br>
+-H	--headers						This flag configures an entire header to pass along with each request.<br>
+-k	--no-tls-validation				This flag  skips the process that checks the certificate when https is used. It often happens for CTF events or test rooms like the ones on THM a self-signed certificate is used. This causes an error during the TLS check.<br>
+-n	--no-status						You can set this flag when you don’t want to see status codes of each response received. This helps keep the output on the screen clear.<br>
+-P	password						You can set this flag together with the --username flag to execute authenticated requests. This is handy when you have obtained credentials from a user.<br>
+-s	--status-codes					With this flag, you can configure which status codes of the received responses you want to display, such as 200, or a range like 300-400.<br>
+-b	--status-codes-blacklist		This flag allows you to configure which status codes of the received responses you don’t want to display. Configuring this flag overrides the -s flag.<br>
+-U	--username						You can set this flag together with the --password flag to execute authenticated requests. This is handy when you have obtained credentials from a user.<br>
+-r	--followredirect				This flags configures Gobuster to follow the redirect that it received as a response to the sent request. A HTTP redirect status code (e.g., 301 or 302) is used to redirect the client to a different URL.<br>
+<br>
+   <h3>How To Use dir Mode</h3>
+   <code>gobuster dir -u "http://www.example.thm" -w /path/to/wordlist<br>
+gobuster dir -u "http://www.example.thm" -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -r</code><br>
+<b>gobuster dir:</b> Configures Gobuster to use the directory and file enumeration mode.<br>
+<b>-u http://www.example.thm</b>:<br>
+	The URL will be the base path where Gobuster starts looking. So, the URL  above is using the root web directory. For example, in a typical Apache installation on Linux, this is /var/www/html. So if you have a “resources” directory and you want to enumerate that directory, you’d set the URL as http://www.example.thm/resources. You can also think of this like http://www.example.thm/path/to/folder.<br>
+	The URL must contain the protocol used, in this case, HTTP. This is important and required. If you pass the wrong protocol, the scan will fail.<br>
+	In the host part of the URL, you can either fill in the IP or the HOSTNAME. However, it is important to mention that when using the IP, you may target a different website than intended. A web server can host multiple websites using one IP (this technique is also called virtual hosting). Use the HOSTNAME if you want to be sure.<br>
+	Gobuster does not enumerate recursively. So, if the results show a directory path you are interested in, you will have to enumerate that specific directory.<br>
+<b>-w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt</b> configures Gobuster to use the directory-list-2.3-medium.txt wordlist to enumerate. Each entry of the wordlist is appended to the configured URL.<br>
+<b>-r</b> configures Gobuster to follow the redirect responses received from the sent requests. If a status code 301 was received, Gobuster will navigate to the redirect URL that is included in the response.<br>
+<br>
+<code>gobuster dir -u "http://www.example.thm" -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x .php,.js</code> <br>
+<i>We use the <b>-x flag </b> to specify what type of files we want to enumerate</i></p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="sub">Subdomain Enumeration</h2> 
+    <p>This mode allows Gobuster to brute force subdomains. During a penetration test,  checking the subdomains of your target’s top domain is essential.<br>
+	<code>gobuster dns --help</code><br>
+<i>Flag  Long Flag		+	Description</i><br>
+-c   --show-cname  		Show CNAME Records (cannot be used with the -i flag).<br>
+-i   --show-ips		Including this flag shows IP addresses that the domain and subdomains resolve to.<br>
+-r   --resolver		This flag configures a custom DNS server to use for resolving.<br>
+-d   --domain			This flag configures the domain you want to enumerate.<br>
+<br>
+<h3>How to Use dns Mode:</h3>
+<code>gobuster dns -d example.thm -w /path/to/wordlist<br>
+gobuster dns -d example.thm -w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt</code><br>
+<b>gobuster dns</b> enumerates subdomains on the configured domain.<br>
+<b>-d example.thm</b> sets the target to the example.thm domain.<br>
+<b>-w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt</b> sets the wordlist to subdomains-top1million-5000.txt. Gobuster uses each entry of this list to construct a new DNS query. If the first entry of this list is 'all', the query would be all.example.thm.<br>
+</p>    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+   <h2 id="vhost">Vhost Enumeration</h2> 
+    <p>This mode allows Gobuster to brute force virtual hosts. Virtual hosts are different websites on the same machine.<br>
+Virtual hosts are IP-based and are running on the same server. Subdomains are set up in DNS. The  difference between vhost and dns mode is in the way Gobuster scans:<br>
+<b>vhost mode</b> will navigate to the URL created by combining the configured HOSTNAME (-u flag) with an entry of a wordlist.<br>
+<b>dns mode</b> will do a DNS lookup to the FQDN created by combining the configured domain name (-d flag) with an entry of a wordlist.<br>
+<br><code> gobuster vhost --help</code><br>
+<i>Short Flag	Long Flag	+	Description</i><br>
+-u		--url					Specifies the base URL (target domain) for brute-forcing virtual hostnames.<br>
+		--append-domain			Appends the base domain to each word in the wordlist (e.g., word.example.com).<br>
+-m		--method				Specifies the HTTP method to use for the requests (e.g., GET, POST).<br>
+		--domain				Appends a domain to each wordlist entry to form a valid hostname (useful if not provided explicitly).<br>
+		--exclude-length		Excludes results based on the length of the response body (useful to filter out unwanted responses).<br>
+-r		--follow-redirect		Follows HTTP redirects (useful for cases where subdomains may redirect).<br>
+<br>
+<h3>How To Use vhost Mode:</h3>
+<code>gobuster vhost -u "http://example.thm" -w /path/to/wordlist<br>
+gobuster vhost -u "http://MACHINE_IP" --domain example.thm -w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt --append-domain --exclude-length 250-320 </code><br>
+<b>gobuster vhost</b> instructs Gobuster to enumerate virtual hosts.<br>
+<b>-u "http://MACHINE_IP"</b> sets the URL to browse to MACHINE_IP.<br>
+<b>-w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt</b> configures Gobuster to use the subdomains-top1million-5000.txt wordlist. Gobuster appends each entry in the wordlist to the configured domain. If no domain is explicitly configured with the --domain flag, Gobuster will extract it from the URL. E.g., test.example.thm, help.example.thm, etc. If any subdomains are found, Gobuster will report them to you in the terminal.<br>
+<b>--domain example.thm</b> sets the top- and second-level domains in the Hostname: part of the request to example.thm.<br>
+<b>--append-domain</b> appends the configured domain to each entry in the wordlist. If this flag is not configured, the set hostname would be www, blog, etc. This will cause the command to work incorrectly and display false positives.<br>
+<b>--exclude-length</b> filters the responses we get from the sent web requests. With this flag, we can filter out the false positives. If you run the command without this flag, you will notice you will get a lot of false positives like "Found: Orion.example.thm Status: 404 [Size: 279]" or  "Found: pm.example.thm Status: 404 [Size: 276]". These false positives typically have a similar response size, so we can use this to filter out most false positives. We expect to get a 200 OK response back to have a true positive. There are, however, exceptions, but it is not in the scope of this room to go deeper into these.<br>
+
+</p>    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>	
+</div></div>
+
+</body>
+</html>

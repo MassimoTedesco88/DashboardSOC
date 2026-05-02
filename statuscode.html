@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>statuscode</title>
+<meta name="description" content="statuscode">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>[HTTP status codes]</h3>
+</header>
+
+<div class="flex-container">    
+        <div id="inizio" class="tools-container">
+        <a href="#100"  class="button-link">1xx informational response</a>
+        <a href="#200"  class="button-link">2xx success</a> 
+        <a href="#300"  class="button-link">3xx redirection</a>  
+        <a href="#400"  class="button-link">4xx client error</a>            
+		<a href="#500"  class="button-link">5xx server error</a> 
+		
+		
+		
+        </div>
+<div class="sub-container">  
+	<h2>Main Status Codes:</h2>
+<p>
+<b>100 Continue</b> → Il server ha ricevuto l’inizio della richiesta, continua pure<br>
+<hr>
+<b>200 OK</b> → Richiesta completata correttamente<br>
+<b>201 Created</b> → Risorsa creata (API REST)<br>
+<b>204 No Content</b> → Successo ma senza risposta<br>
+<hr>
+<b>301 Moved Permanently</b> → Redirect permanente<br>
+<b>302 Found</b> → Redirect temporaneo<br>
+<b>304 Not Modified</b> → Cache valida<br>
+<b>Problemi tipici:</b> redirect loop (browser gira all’infinito), HTTP → HTTPS mal configurato<br>
+<hr>
+<b>400 Bad Request</b> → richiesta malformata (header o payload errato)<br>
+<b>401 Unauthorized</b> → autenticazione richiesta<br>
+<b>403 Forbidden</b> → accesso negato (permessi, firewall)<br>
+<b>404 Not Found</b> → risorsa inesistente<br>
+<b>408 Request Timeout</b> → il client ha impiegato troppo tempo<br>
+<b>429 Too Many Requests</b> → rate limit (troppo traffico)<br>
+<b>Diagnosi:</b>URL sbagliato → <b>404</b> ; auth/token errato → <b>401</b>; blocco firewall/CDN → <b>403</b><br>
+<hr>
+<b>500 Internal Server Error </b>→ errore generico server<br>
+<b>502 Bad Gateway </b>→ proxy non riceve risposta valida (es. nginx ↔ backend)<br>
+<b>503 Service Unavailable </b>→ server down o sovraccarico<br>
+<b>504 Gateway Timeout </b>→ backend non risponde in tempo<br>
+<b>Diagnosi:</b> <b>502/504</b> → problema tra server (microservizi, proxy, API); <b>503</b> → server offline o overload; <b>500</b> → bug applicativo<br>
+</p>
+
+    <h2 id="100">1xx informational response</h2> 
+    <p>An informational response indicates that the request was received and understood and is being processed. It alerts the client to wait for a final response. The message does not contain a body. As the HTTP/1.0 standard did not define any 1xx status codes, servers must not send a 1xx response to an HTTP/1.0 compliant client except under experimental conditions.</p>
+        <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	 <h2 id="200">2xx success</h2> 
+    <p>A success status indicates that the action requested by the client was received, understood, and accepted.</p>
+        <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	 <h2 id="300">3xx redirection</h2> 
+    <p>A 3xx status indicates that the client must take additional action, generally URL redirection, to complete the request.A user agent may carry out the additional action with no user interaction if the method used in the additional request is GET or HEAD. A user agent should prevent cyclical redirects.</p>
+        <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	 <h2 id="400">4xx client error</h2> 
+    <p>A 4xx status code is for situations in which an error seems to have been caused by the client. Except when responding to a HEAD request, the server should include an entity containing an explanation of the error situation, and whether it is a temporary or permanent condition. These status codes are applicable to any request method. User agents should display any included entity to the user.</p>
+        <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="500">5xx server error</h2> 
+    <p> 5xx status indicates that the server is aware that it has encountered an error or is otherwise incapable of performing the request. Except when responding to a HEAD request, the server should include an entity containing an explanation of the error situation, and indicate whether it is a temporary or permanent condition. Likewise, user agents should display any included entity to the user. These response codes are applicable to any request method.</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>	
+</div></div>
+
+
+</body>
+</html>

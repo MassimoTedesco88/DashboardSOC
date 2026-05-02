@@ -1,0 +1,177 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Nmap Cheatsheet</title>
+<meta name="description" content="Nmap cheatsheet">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>[Nmap Cheatsheet]</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#intro"  class="button-link">Nmap Basic</a>        
+        <a href="#discovery"  class="button-link">Nmap Live Host Discovery</a>  
+        <a href="#basic"  class="button-link">Nmap Basic Port Scans</a>
+        <a href="#adv"  class="button-link">Nmap Advanced Port Scans</a>
+        <a href="#post"  class="button-link">Nmap Post Port Scans</a>          
+        </div>
+<div class="sub-container">    
+   
+	<h2 id="intro">Nmap Basic</h2> 
+    <p>  
+    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="discovery">Nmap Live Host Discovery</h2> 
+	<p>Quali sistemi sono attivi? Quali servizi sono in esecuzione in questi sistemi? <br>
+	<b>Scoprire i sistemi online prima della scansione delle porte: Questa fase è cruciale perché tentare di eseguire la scansione dei sistemi offline  farà perdere tempo e genera rumore di rete!</b><br>
+	Diversi approcci che Nmap usi per scoprire host dal vivo:<br>
+<b>1) ARP scan :</b> Questa scansione utilizza ARP richieste per scoprire  live hosts; <br>
+-ARP scan is possible only if you are on the same subnet as the target systems. On an Ethernet (802.3) and WiFi (802.11), you need to know the MAC address of any system before you can communicate with it<br>
+If you want Nmap only to perform an ARP scan without port-scanning, you can use nmap -PR -sn TARGETS, where -PR indicates that you only want an ARP scan<br>
+<br>
+<b>2) ICMP scan:</b> Questa scansione utilizza le richieste ICMP per identificare i  live hosts<br>
+-We can ping every IP address on a target network and see who would respond to our ping (ICMP Type 8/Echo) requests with a ping reply (ICMP Type 0).<br>
+-Many firewalls block ICMP echo; new versions of MS Windows are configured with a host firewall that blocks ICMP echo requests by default. Remember that an ARP query precedes an ICMP request if your target is on the same subnet.<br>
+-To use ICMP echo request to discover live hosts, add the option -PE. (Remember to add -sn if you don’t want to follow that with a port scan.)<br>
+-Because ICMP echo requests tend to be blocked, you might also consider ICMP Timestamp or ICMP Address Mask requests to tell if a system is online. Nmap uses a timestamp request (ICMP Type 13) and checks whether it will get a Timestamp reply (ICMP Type 14). Adding the -PP option tells Nmap to use ICMP timestamp requests.<br>
+-Similarly, Nmap uses address mask queries (ICMP Type 17) and checks whether it gets an address mask reply (ICMP Type 18). This scan can be enabled with the option -PM. <br>
+-It is essential to learn multiple approaches to achieve the same result. If one packet type is blocked, we can always choose another to discover the target network and services.<br>
+<br>
+<b>3) TCP/UDP ping:</b> Questa scansione invia i pacchetti a TCP porti e UDP porte per determinare i  live hosts<br>
+<br>
+
+<b>1) When a privileged user tries to scan targets on a local network (Ethernet),</b> Nmap uses ARP requests. A privileged user is root or a user who belongs to sudoers and can run sudo.<br>
+<b>2) When a privileged user tries to scan targets outside the local network,</b> Nmap uses ICMP echo requests, TCP ACK (Acknowledge) to port 80, TCP SYN (Synchronize) to port 443, and ICMP timestamp request.<br>
+<b>3) When an unprivileged user tries to scan targets outside the local network,</b> Nmap resorts to a TCP 3-way handshake by sending SYN packets to ports 80 and 443.<br>
+	
+</p>
+	
+	
+    <p> 
+<i>Scan Type		+		Example	 Command</i><br>
+ARP Scan		> <code>sudo nmap -PR -sn MACHINE_IP/24</code><br>
+ICMP Echo Scan	> <code>sudo nmap -PE -sn MACHINE_IP/24</code><br>
+ICMP Timestamp Scan	> <code>sudo nmap -PP -sn MACHINE_IP/24</code><br>
+ICMP Address Mask Scan	> <code>sudo nmap -PM -sn MACHINE_IP/24</code><br>
+TCP SYN Ping Scan	> <code>sudo nmap -PS22,80,443 -sn MACHINE_IP/30</code><br>
+TCP ACK Ping Scan	> <code>sudo nmap -PA22,80,443 -sn MACHINE_IP/30</code><br>
+UDP Ping Scan	> <code>sudo nmap -PU53,161,162 -sn MACHINE_IP/30</code><br>
+
+<br>Remember to add -sn if you are only interested in host discovery without port-scanning. Omitting -sn will let Nmap default to scanning live hosts for ports.<br>
+<br><i>Option	+	Purpose</i><br>
+<code>-n</code>	>	no DNS lookup<br>
+<code>-R</code>	>	reverse-DNS lookup for all hosts<br>
+<code>-sn</code>  >	host discovery only<br>
+	
+	</p>
+    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+   <h2 id="basic">Nmap Basic Port Scans</h2> 
+   <p><b>TCP SYN Scan:</b> requires a privileged (root or sudoer) user to run it; does not need to complete the TCP 3-way handshake;Because we didn’t establish a TCP connection, this decreases the chances of the scan being logged.<br>
+   <br><b>UDP Scan:</b>  it does not require any handshake for connection establishment;We cannot guarantee that a service listening on a UDP port would respond to our packets; if a UDP packet is sent to a closed port, an ICMP port unreachable error (type 3, code 3) is returned. <br>
+   </p>
+    <p>
+<i>Port Scan Type	+	Example Command</i><br>
+TCP Connect Scan > <code>nmap -sT MACHINE_IP</code><br>
+TCP SYN Scan	> <code>sudo nmap -sS MACHINE_IP</code><br>
+UDP Scan	> <code>sudo nmap -sU MACHINE_IP</code><br>
+
+<br>These scan types should get you started discovering running TCP and UDP services on a target host.<br><br>
+
+<i>Option					Purpose</i><br>
+<code>-p-</code>	>	all ports<br>
+<code>-p1-1023</code>	>	scan ports 1 to 1023<br>
+<code>-F</code>	>	100 most common ports<br>
+<code>-r</code>	>	scan ports in consecutive order<br>
+<code>-T<0-5></code>	>	-T0 being the slowest and T5 the fastest<br>
+<code>--max-rate 50	rate</code>	>	<= 50 packets/sec<br>
+<code>--min-rate 15	rate</code>	>	>= 15 packets/sec<br>
+<code>--min-parallelism 100</code> >	at least 100 probes in parallel<br>
+</p>
+	 
+    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+	<hr>
+	<h2 id="adv">Nmap Advanced Port Scans</h2> 
+	<p><b>TCP Null Scan, FIN Scan, and Xmas Scan:</b> Null , Fin e Xmas Scan ricevono una risposta solo nel caso la porta sia chiusa, quindi le restanti porte possono essere aperte o bloccate da regole Firewall.
+<i>Queste scansioni utili solo nel caso di un Firewall stateless,</i> in quanto controlla solo i pacchetti con SYN flag che tentano la connessione.<br>
+<br><b>TCP Maimon Scan:</b>Inutile nella maggiorparte dei casi nelle reti moderne. Non vale la pena inserirla nel mio cheatsheet per CTF.<br>
+<br><b>TCP ACK, Window, and Custom Scan: </b>TCP ACK scan sarebbe utile nel caso <i>il firewall sta davanti al nostro target</i>; in questo caso in base a quali pacchetti ACK hanno prodotto risposte, saremo in grado di conoscere quali porte non son state bloccate dal firewall; questo tipo di scansione è<i> adatto per scoprire " set di regole e configurazione  del firewall"</i>.
+<br>Questo scan può essere eseguito <i>dopo TCP Syn scan o TCP Null/Fin/Xmas scan, nel caso non ho ricevuto risposte chiare</i> ( tipo filtrato).
+<b>Window Scan</b> è un <i>alternativa a TCP ACK</i>.<br>
+In conclusione questi due scan son molto efficienti <i>per mappare le regole del Firewall</i>; da <b>RICORDARE</b> che se un firewall non blocca una porta specifica, non significa che un servizio sia in ascolto su quella porta. Esiste la possibilità che le regole del firewall devono essere aggiornate per le recenti modifiche al servizio.<br>
+<br><b>Spoofing and Decoys:</b> -In alcune configurazioni di rete, sarai in grado di scansionare un sistema di destinazione utilizzando un indirizzo IP falsificato e persino un MAC address falsificato.<br>
+-Tale scansione è utile solo in una situazione in cui puoi garantire di catturare la risposta. <br>
+-Se provi a scansionare un target da una rete casuale utilizzando un indirizzo IP falsificato, è probabile che non avrai alcuna risposta instradata e i risultati della scansione potrebbero essere inaffidabili<br>
+<br><b>Fragmented Packets: </b> dipende dal tipo di firewall/IDS, può risultare utile dividere i pacchetti in dimensioni più ridotte.<br>
+<br><b>Idle/Zombie Scan: </b> Lo spoofing dell'indirizzo IP di origine può essere un ottimo approccio alla scansione furtiva. Tuttavia, lo spoofing funzionerà solo in configurazioni di rete specifiche. Richiede di essere in una posizione in cui è possibile monitorare il traffico. Considerando questi limitazioni, lo spoofing del tuo indirizzo IP può avere poca utilità; tuttavia, possiamo fornirgli un upgrade con la scansione idle.<br>
+<i><b>Leggere Approfondimenti su Nmap Extra per saperne di più</b></i><br>
+</p>
+
+
+    <p><i>
+Port Scan Type	+ 	Example Command</i><br>
+TCP Null Scan	>	<code>sudo nmap -sN 10.114.186.237</code>
+TCP FIN Scan	>	<code>sudo nmap -sF 10.114.186.237</code>
+TCP Xmas Scan	>	<code>sudo nmap -sX 10.114.186.237</code>
+TCP Maimon Scan	>	<code>sudo nmap -sM 10.114.186.237</code>
+TCP ACK Scan	>	<code>sudo nmap -sA 10.114.186.237</code>
+TCP Window Scan	>	<code>sudo nmap -sW 10.114.186.237</code>
+Custom TCP Scan	>	<code>sudo nmap --scanflags URGACKPSHRSTSYNFIN 10.114.186.237</code>
+Spoofed Source IP >	<code>sudo nmap -S SPOOFED_IP 10.114.186.237</code>
+Spoofed MAC Address >	<code>--spoof-mac SPOOFED_MAC</code>
+Decoy Scan		>	<code>nmap -D DECOY_IP,ME 10.114.186.237</code>
+Idle (Zombie) Scan  >	<code>sudo nmap -sI ZOMBIE_IP 10.114.186.237</code>
+Fragment IP data into 8 bytes	>  <code>-f</code>
+Fragment IP data into 16 bytes	>  <code>-ff</code>
+<i>Option	+	Purpose</i><br>
+<code>--source-port PORT_NUM</code> >	specify source port number<br>
+<code>--data-length NUM</code>	>	append random data to reach given length<br>
+<br>
+These scan types rely on setting TCP flags in unexpected ways to prompt ports for a reply. Null, FIN, and Xmas scan provoke a response from closed ports, while Maimon, ACK, and Window scans provoke a response from open and closed ports.
+<br>
+<i>Option		+	Purpose</i></br>
+<code>--reason</code> >	explains how Nmap made its conclusion<br>
+<code>-v</code>		>	verbose<br>
+<code>-vv</code>	>	very verbose<br>
+<code>-d</code>		>	debugging<br>
+<code>-dd</code>	>	more details for debugging<br>
+<br></p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="post">Nmap Post Port Scans</h2> 
+<p><i>
+Option 	+ Meaning</i><br>
+<code>-sV</code> >	determine service/version info on open ports (stabilisce una connessione TCP 3-way)<br>
+<code>-sV --version-light</code> >	try the most likely probes (2)<br>
+<code>-sV --version-all</code> >	try all available probes (9)<br>
+<code>-O</code> >	detect OS<br>
+<code>--traceroute	</code> >	run traceroute to target<br>
+<code>--script=SCRIPTS</code> >	Nmap scripts to run (per + info, leggi Nmap Extra)<br>
+<code>-sC </code> or <code>--script=default</code> >	run default scripts<br>
+<code>-A</code> >	equivalent to -sV -O -sC --traceroute<br>
+<code>-oN</code> >	save output in normal format<br>
+<code>-oG</code> >	save output in grepable format<br>
+<code>-oX</code> >	save output in XML format<br>
+<code>-oA</code> >	save output in normal, XML and Grepable formats<br>
+</p>       
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Wireshark Filters</title>
+<meta name="description" content="Wireshark">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+
+<!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Wireframe iframe -->
+<div class="dashboard">
+    <iframe src="WiresharkFilters.html" title="wiresharkFilters"></iframe>
+</div>
+
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>Wireshark Filters</h3>
+</header>
+
+<div class="flex-container">
+    <div class="step-container">        
+        <ul>            
+            <li><b>1.Traffico sospetto / anomalo</b></li>
+                <ul>
+                    <li>!(ip.addr == 192.168.1.0/24) -<b> IP/MAC sconosciuti</b>-  Mostra traffico che non appartiene alla tua rete</li>
+                    <li>http or https or dns or tls      -<b>Traffico verso Internet non usuale</b>-  Aiuta a identificare comunicazioni verso domini esterni</li>
+                </ul>
+            <li><b>2. DNS - Ricerca di C2, phishing o tunneling</b></li>
+                 <ul>
+                    <li>dns -<b>  Richieste DNS</b></li>
+                    <li>dns.qry.name contains "." - <b>DNS verso domini sospetti o lunghi (tunneling DNS)</b></li>
+                    <li>dns.flags.rcode !=0  -<b> Errori DNS (indicativo di malware che tenta domini inesistenti)</b></li>
+                </ul>            
+            <li><b>3.TLS - Controllo del traffico cifrato anomalo</b></li>
+                <ul>
+                    <li>tls -<b> tutte le connessioni TLS</b></li>
+                    <li>tls.handshake.certificate - <b>Certificati self-signed o insoliti</b></li>
+                    <li>tls.handshake.extensions_server_name  -<b> SNI utile per identificare il dominio</b></li>
+                </ul>        
+            <li><b>4.Comportamenti tipici del malware (C2/beaconing)</b></li>
+                <ul>
+                    <li>tcp.flags.syn == 1 -<b> Conessioni ripetute verso lo stesso IP   (aiuta a identificare beaconing periodico)</b></li>
+                    <li>tcp.analysis.keep_alive  - <b>Connessioni brevi e costanti</b></li>                    
+                </ul>    
+            <li><b> 5. HTTP - Phishing, exfiltration, download payload</b></li> 
+                <ul>
+                    <li>http -<b> tutto il traffico</b></li>
+                    <li>http.request.method == "POST" or  http.request.method == "GET" - <b>download file</b></li>
+                    <li>http.content_type contains "application"  -<b> File sospetti nelle risposte (es. .exe .zip .pdf)</b></li>              </ul>            
+        </ul>
+    </div>
+    <div class="step-container">
+           <ul>            
+            <li><b>6. ICMP - Scansioni o problemi di routing</b></li>
+                <ul>
+                    <li>icmp -<b> Ping e ICMP</b></li>
+                    <li>icmp.type == 3 -<b>ICMP unreachable (possibile scanning o errori)</b></li>
+                </ul>
+            <li><b>7. TCP - Anomalie, attacchi, scansioni</b></li>
+                 <ul>
+                    <li>tcp.flags.reset == 1 -<b>  reset sospetti (forzatura connessioni)</b></li>
+                    <li>tcp.analysis.retransmission  - <b>Ritrasmissioni (DoS, congestione, MITM)</b></li>
+                    <li>tcp.flags.syn == 1 and tcp.flags.ack  == 0   -<b> Handshake incompleti (SYN scan / port scan)</b></li>
+                    <li>tcp.flags.syn == 1 and tcp.len == 0  -<b>  Possibile SYN Flood</b></li>
+                </ul>            
+            <li><b>8. ARP - Spoofing o MITM</b></li>
+                <ul>
+                    <li>arp -<b> ARP traffic</b></li>
+                    <li>arp.duplicate-address-detected  - <b>ARP duplicate IP (possibile MITM)</b></li>
+                    
+                </ul>        
+            <li><b>9. DHCP   - Dispositivi non autorizzati</b></li>
+                <ul>
+                    <li>dhcp -<b> Nuovi dispositivi in rete</b></li>
+                    <li>bootp.option.type == 53  and bootp.option.value == 1   - <b>Richieste DHCP sospette</b></li>                    
+                </ul>    
+            <li><b>10. Ricerca di exfiltrazione</b></li> 
+                <ul>
+                    <li>ip.dst != 192.168.1.0/24 -<b> Traffico anomalo in uscita</b></li>
+                    <li>http.request.method == "POST" and http.content_length > 50000 - <b>Flussi POST grandi</b></li>
+                </ul>            
+        </ul>
+    </div>
+</div>
+
+
+      
+      
+
+<!-- Suggestions -->
+<div class="sub-container">
+    <h2>Suggestions:</h2>
+    <p>Go > Go To Packet <i>Inserisci il numero di un determinato pacchetto</i></p>  
+    <p>Statistics > resolved Addressed > Hosts<i>This option helps analysts identify IP addresses and DNS names available in the capture file by providing the list of the resolved addresses and their hostnames.</i></p>  
+    <p>Statistics > Protocol Hierarchy <i>This option breaks down all available protocols from the capture file and helps analysts view the protocols in a tree view based on packet counters and percentages. Thus analysts can view the overall usage of the ports and services and focus on the event of interest.</i></p>  
+    <p>Statistic > Conversations <i>Conversation represents traffic between two specific endpoints. This option provides the list of the conversations in five base formats; ethernet, IPv4, IPv6, TCP and UDP. Thus analysts can identify all conversations and contact endpoints for the event of interest.  </i></p>
+    <p>Statistics > Endpoints <i> The endpoints option is similar to the conversations option. The only difference is that this option provides unique information for a single information field (Ethernet, IPv4, IPv6, TCP and UDP ). Thus analysts can identify the unique endpoints in the capture file and use it for the event of interest.
+        <br> Wireshark also supports resolving MAC addresses to human-readable format using the manufacturer name assigned by IEEE. Note that this conversion is done through the first three bytes of the MAC address and only works for the known manufacturers. When you review the ethernet endpoints, you can activate this option with the"Name resolution"button in the lower-left corner of the endpoints window.</i></p>
+
+    <p><a href="https://www.wireshark.org/docs/dfref/ " target="_blank" class="button-link">Filters</a><i> Elenco dei filtri che si possono applicare</i></p>   
+</div>
+
+</body>
+</html>
