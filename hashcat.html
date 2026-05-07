@@ -2,8 +2,8 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Active Recon</title>
-<meta name="description" content="Active Recon">
+<title>Hashcat</title>
+<meta name="description" content="Hashcat">
     <meta name="author" content="Massimo">
     <link rel="stylesheet" href="Styles/Styles.css">
 </head>
@@ -15,148 +15,29 @@
 <!-- Header titolo -->
 <header>
     <div class="line"></div>
-    <h3>[Active reconnaissance]</h3>
+    <h3>[HASHCAT]</h3>
 </header>
 
 <div class="flex-container">
     
         <div id="inizio" class="tools-container">
-        <a href="#webbrowser"  class="button-link">Web Browser</a>
-        <a href="#ping"  class="button-link">ping</a> 
-        <a href="#Traceroute"  class="button-link">Traceroute</a>  
-        <a href="#Telnet"  class="button-link">Telnet</a>
-        <a href="#Netcat"  class="button-link">Netcat</a>
-        <a href="#Riassunto"  class="button-link">Riassunto Comandi</a>          
+                
         </div>
 <div class="sub-container">    
-    <h2 id="webbrowser">Web Browser</h2> 
+    
     <p>
-	On the transport level, the browser connects to:<br>
-TCP port 80 by default when the website is accessed over HTTP<br>
-TCP port 443 by default when the website is accessed over HTTPS<br>
-For instance, https://127.0.0.1:8834/ will connect to 127.0.0.1 (localhost) at port 8834 via HTTPS protocol. If there is an HTTPS server listening on that port, we will receive a web page.<br>
-While browsing a web page, you can press Ctrl+Shift+I on a PC to open the Developer Tools on Firefox<br>
-For instance, you can view and even modify the JavaScript (JS) files, inspect the cookies set on your system and discover the folder structure of the site content.<br>
+	<code>hashcat -m  "hash_type"  -a  "attack_mode"  hashfile wordlist</code><br>
+-m "hash_type" specifies the hash-type in numeric format. For example, -m 1000 is for NTLM. Check the official documentation (man hashcat) and example page(opens in new tab) to find the hash type code to use.<br>
+-a "attack_mode" specifies the attack-mode. For example, -a 0 is for straight, i.e., trying one password from the wordlist after the other.<br>
+hashfile is the file containing the hash you want to crack.<br>
+wordlist is the security word list you want to use in your attack.<br>
+<a href="https://hashcat.net/wiki/doku.php?id=example_hashes" target="_blank"  title="hashcat">Per selezionare Hash-Mode corretto clicca qui! </a>  <br>
 <br>
-There are also plenty of add-ons for Firefox and Chrome that can help in penetration testing. Here are a few examples:<br>
-<br>
-<b>FoxyProxy</b> lets you quickly change the proxy server you are using to access the target website. This browser extension is convenient when you are using a tool such as Burp Suite or if you need to switch proxy servers regularly. You can get FoxyProxy for Firefox from here > <a href="https://addons.mozilla.org/en-US/firefox/addon/foxyproxy-standard" target="_blank"  title="webbrows1">FoxyProxy</a>   <br>
-<b>User-Agent</b> Switcher and Manager gives you the ability to pretend to be accessing the webpage from a different operating system or different web browser. In other words, you can pretend to be browsing a site using an iPhone when in fact, you are accessing it from Mozilla Firefox. You can download User-Agent Switcher and Manager for Firefox here > <a href="https://addons.mozilla.org/en-US/firefox/addon/user-agent-string-switcher" target="_blank"  title="webbrows2">User-Agent</a> <br>
-<b>Wappalyzer</b> provides insights about the technologies used on the visited websites. Such extension is handy, primarily when you collect all this information while browsing the website like any other user. A screenshot of Wappalyzer is shown below. You can find Wappalyzer for Firefox here > <a href="https://addons.mozilla.org/en-US/firefox/addon/wappalyzer" target="_blank"  title="webbrows3">Wappalyzer</a> <br>
-
-
-
-	</p>   
-    
-    <a href="#inizio"  class="button-link">Torna all'indice!</a>
-    <hr>
-	<h2 id="ping">Ping</h2> 
-    <p>The primary purpose of ping is to check whether you can reach the remote system and that the remote system can reach you back. <br>
-the ping is a command that sends an ICMP Echo packet to a remote system. If the remote system is online, and the ping packet was correctly routed and not blocked by any firewall, the remote system should send back an ICMP Echo Reply. <br>
-<code>ping HOSTNAME</code><br>
-<br>
-If you don’t specify the count on a Linux system, you will need to hit CTRL+c to force it to stop. Hence, you might consider ping -c 10 10.114.137.163 if you just want to send ten packets. This is equivalent to ping -n 10 10.114.137.163 on a MS Windows system.<br>
-<br>
-<b>"From a penetration testing point of view, we will try to discover more about this target. We will try to learn as much as possible, for example, which ports are open and which services are running."</b><br>
-Generally speaking, when we don’t get a ping reply back, there are a few explanations that would explain why we didn’t get a ping reply, for example:<br>
-The destination computer is not responsive; possibly still booting up or turned off, or the OS has crashed.<br>
-It is unplugged from the network, or there is a faulty network device across the path.<br>
-A firewall is configured to block such packets. The firewall might be a piece of software running on the system itself or a separate network appliance. Note that MS Windows firewall blocks ping by default.<br>
-Your system is unplugged from the network.<br>
-<br>
-Use the "<code>man ping</code>" command on a Linux system to consult ping's manual pages. Alternatively, check the following extract from the manual page:<code>ping [-c count] [-i interval] [-I interface] [-W timeout] [-p pattern] [-s packetsize] [-t ttl] [-T timestamp option] [hop...] {destination}</code><br>
-
-	</p>   
-    
-    <a href="#inizio"  class="button-link">Torna all'indice!</a>
-    <hr>
-	<h2 id="Traceroute">Traceroute</h2> 
-    <p>The <b>traceroute</b> command traces the route taken by the packets from your system to another host. The purpose of a traceroute is to find the IP addresses of the routers or hops that a packet traverses as it goes from your system to a target host. <br>
-On Linux and macOS, the command to use is <code>traceroute 10.114.137.163</code>, and on MS Windows, it is <code>tracert 10.114.137.163</code>. traceroute tries to discover the routers across the path from your system to the target system.<br>
-<br>
-Su Linux, traceroute inizierà inviando datagrammi UDP all'interno di pacchetti IP di TTL essere 1. Pertanto, fa sì che il primo router incontri un TTL=0 e inviare un ICMP Time-to-Live superato indietro. Quindi, a TTL di 1 vi rivelerà l'indirizzo IP del primo router. Quindi invierà un altro pacchetto con TTL=2; questo pacchetto verrà eliminato al secondo router. E così via.<br>
-da tracert notiamo: <br>
-- abbiamo  linee numerate; ogni linea rappresenta un router/hop. <br>
-- Il nostro sistema invia tre pacchetti con TTL impostato su 1, poi tre pacchetti con TTL impostato su 2 e così via.<br>
-- A seconda della topologia di rete, potremmo ottenere risposte da un massimo di 3 router diversi, a seconda del percorso seguito dal pacchetto.<br>
-- La linea <code>12 99.83.69.207 (99.83.69.207) 17.603 ms 15.827 ms 17.351 ms</code> ha abbandonato il pacchetto tre volte e ha inviato un messaggio di transito con tempo ICMP superato.<br>
-- La linea <code>3 * 100.66.16.176 (100.66.16.176) 8.006 ms *</code> indica che il nostro sistema non ha ricevuto due messaggi in transito con tempo ICMP previsto superato.<br>
-- La linea <code>1 ec2-3-248-240-5.eu-west-1.compute.amazonaws.com (3.248.240.5) 2.663 ms * ec2-3-248-240-13.eu-west-1.compute.amazonaws.com (3.248.240.13) 7.468 ms  </code>possiamo vedere che i pacchetti che escono dall'AttackBox prendono percorsi diversi. Possiamo vedere due router che hanno risposto al fatto che TTL fosse uno solo. Il nostro sistema non ha mai ricevuto il terzo messaggio ICMP previsto.
-<br><br>
- Non possiamo aspettarci che il percorso rimanga fisso quando i pacchetti devono passare tramite altri router al di fuori della nostra rete.<br>
-
-Per riassumere, possiamo notare quanto segue<br>
-
--Il numero di salti/router tra il sistema e il sistema di destinazione dipende dal tempo in cui si esegue traceroute. Non vi è alcuna garanzia che i vostri pacchetti seguiranno sempre lo stesso percorso, anche se siete sulla stessa rete o ripetete il comando traceroute in breve tempo.<br>
--Alcuni router restituiscono un indirizzo IP pubblico. Potresti esaminare alcuni di questi router in base all'ambito del test di penetrazione previsto.<br>
--Alcuni router non restituiscono una risposta.<br>
-	
-	</p>   
-    
-    <a href="#inizio"  class="button-link">Torna all'indice!</a>
-    <hr>
-   <h2 id="Telnet">Telnet</h2> 
-    <p>
-	Il protocollo <b>TELNET (Teletype Network)</b> è stato sviluppato nel 1969 per comunicare con un sistema remoto tramite un'interfaccia a riga di comando (command-line interface)CLI). Quindi, il comando telnet utilizza il protocollo TELNET per l'amministrazione remota. La porta predefinita utilizzata da telnet è <b>23</b>. Dal punto di vista della sicurezza, telnet invia tutti i dati, inclusi nomi utente e password, in chiaro. L'invio in testo non crittografato rende facile per chiunque abbia accesso al canale di comunicazione rubare le credenziali di accesso. L'alternativa sicura è il protocollo SSH (Secure SHell).<br>
--> Sapendo che il client telnet si basa sul protocollo TCP, è possibile <i>utilizzare Telnet per connettersi a qualsiasi servizio e afferrare il suo header.</i> Utilizzando <code>telnet MACHINE_IP PORTA</code> è possibile connettersi a qualsiasi servizio in esecuzione TCP e scambia anche qualche messaggio a meno che non utilizzi la crittografia.
-<br>-> Se volessimo scoprire maggiori informazioni su un server web, in ascolto sulla porta 80:<br>
- 1) connessione al server alla porta 80 e poi comunichiamo usando il protocollo HTTP; <br>
- 2) Per specificare qualcosa di diverso dalla pagina indice predefinita, è possibile emettere <code>GET /page.html HTTP/1.1</code>, che richiederà pagina.html;<br>
- 3) Per ottenere una risposta valida, invece di un errore, è necessario inserire un valore per l'host <code>host: esempio</code> e premi invio due volte.
-<br>-> Di particolare interesse per noi è scoprire il tipo e la versione del server web installato, <code>Server: nginx/1.6.2.</code> ; Se ci connettiamo a un <i>server di posta</i>, dobbiamo utilizzare comandi adeguati basati sul protocollo, come ad esempio <i>SMTP e POP3</i>.
-<br>
-<b>ESEMPIO:</b><br>
-1)<code> telnet 10.114.140.157 80</code><br>
-2)<code>GET /HTTP/1.1 host:esempio</code><br>
-3) si puo estrapolare nome e versione server 
-	
-	</p>   
-    
-    <a href="#inizio"  class="button-link">Torna all'indice!</a>
-	<hr>
-	<h2 id="Netcat">Netcat</h2> 
-    <p>
-	Netcat o semplicemente nc ha diverse applicazioni che possono essere di grande valore per un pentester. Netcat supporta ia i protocolli TCP che UDP. Può funzionare come un client che si connette a una porta di ascolto; in alternativa, può agire come un server che ascolta su una porta di tua scelta.<br>
-1) per raccogliere il suo header utilizza: <code>nc MACCHINA_IP 80</code><br>
-NB) Tieni presente che potrebbe essere necessario premere MAIUSC+INVIO dopo la riga GET<br>
-2)<code>GET /HTTP/1.1</code>   (stiamo specificando al server di destinazione che il nostro client supporta HTTP versione 1.1. )    ;<br>
-3) Infine, dobbiamo dare un nome al nostro host, quindi abbiamo aggiunto su una nuova linea: <code>host: netcat</code>     ; <br>
-<br>
-Su <i>Server-Side</i> è possibile utilizzare netcat per ascoltare su una porta TCP e connettersi a una porta di ascolto su un altro sistema:
-<br>-E' possibile emettere nc-lp 1234 o meglio ancora, nc-vnlp 1234, che equivale a nc -v -l -n -p 1234
-<br>-L'ordine esatto delle lettere non ha importanza finché il numero della porta è preceduto direttamente da -P.
-<br>
-<i>opzione +	significato</i><br>
--l	= Modalità ascolto
-<br>-P	= Specificare il numero della Porta
-<br>-N	= Solo numerico; nessuna risoluzione dei nomi host tramite DNS
-<br>-v	= Uscita Verbose (opzionale, ma utile per scoprire eventuali bug)
-<br>-vv	= Verbosissimo (opzionale)
-<br>-K	= Continua ad ascoltare dopo che il client si è disconnesso
-<br>
-<b>Note:</b><br>
-l'opzione -P dovrebbe apparire appena prima del numero di porta su cui si desidera ascoltare.<br>
-l'opzione -N eviterà ricerche e avvisi DNS.<br>
-i numeri di porta inferiori a 1024 richiedono privilegi di root per essere ascoltati.<br>
-<br>
-Su <i>Client-Side</i> pubblicheresti <code>nc 10.114.157.210 PORTA_NUMERO</code> ; <br>
-Sul lato server ascolteremo sulla porta 1234. Possiamo raggiungere questo obiettivo con il comando <code>nc-vnlp 1234</code> (uguale a nc-lvnp 1234). Nel nostro caso, il server di ascolto ha l'indirizzo IP 10.114.157.210, quindi possiamo connetterci ad esso dal lato client eseguendo nc 10.114.157.210 1234. Questa configurazione riecheggerebbe qualunque cosa digiti da un lato all'altro lato del TCP tunnel. <br>
-</p>       
-    <a href="#inizio"  class="button-link">Torna all'indice!</a>
-    <hr>
-	<h2 id="Riassunto">Riassunti Comandi</h2> 
-    <p><i>Comando + Esempi</i><br>
-<b>ping</b>	-	<code>ping-c 10 10.114.157.210 su Linux o macOS</code>
-<b>ping</b>	-	<code>ping -n 10 10.114.157.210 su MS Windows</code>
-<b>traceroute</b>	-	<code>traceroute 10.114.157.210 su Linux o macOS</code>
-<b>tracert</b>	-	<code>tracert 10.114.157.210 su MS Windows</code>
-<b>telnet</b>	-	<code>telnet 10.114.157.210 PORTA_NUMERO</code>
-<b>netcat come client</b>	-	<code>nc 10.114.157.210 PORTA_NUMERO</code>
-<b>netcat come server</b>	-	<code>nc -lvnp PORTA_NUMERO</code>
+For example, <code>hashcat -m 3200 -a 0 hash.txt /usr/share/wordlists/rockyou.txt</code> will treat the hash as Bcrypt and try the passwords in the rockyou.txt file.
 </p>   
     
     <a href="#inizio"  class="button-link">Torna all'indice!</a>
-    <hr>
+    
 </div>
 
 </body>

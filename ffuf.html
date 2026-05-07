@@ -1,0 +1,228 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>FFUFF</title>
+<meta name="description" content="ffuf">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>[FFUF]</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+        <a href="#intro"  class="button-link">Introduction</a>
+        <a href="#dir"  class="button-link">Directory and File Enumeration</a> 
+        <a href="#filters"  class="button-link"> Enumeration with Filters </a>  
+		<a href="#fuzz"  class="button-link"> Fuzzing parameters </a>  
+        <a href="#vhost"  class="button-link">Subdomain e Vhost Enumeration</a>       
+		<a href="#proxi"  class="button-link"> Proxifying ffuf traffic </a>  		
+        </div>
+<div class="sub-container">    
+    <h2 id="intro">Introduction</h2> 
+    <p>
+	 ffuf stands for Fuzz Faster U Fool. It's a tool used for web enumeration, fuzzing, and directory brute forcing.
+<i>Install SecLists:</i> 
+SecLists is a collection of multiple types of lists used during security assessments. List types include usernames, passwords, URLs, sensitive data patterns, fuzzing payloads, web shells, and many more.<br>
+SecLists is already included in the following Linux distributions:
+BlackArch
+Pentoo
+Kali
+Parrot
+</p>
+<h3>Basics</h3>
+<p>
+<code>ffuf -h</code><br>
+<i>HTTP + OPTIONS:</i><br>
+  <code>-H</code> >>>   Header `"Name: Value"`, separated by colon. Multiple -H flags are accepted.<br>
+  <code>-X</code> >>>   HTTP method to use<br>
+  <code>-b</code> >>>   Cookie data `"NAME1=VALUE1; NAME2=VALUE2"` for copy as curl functionality.<br>
+  <code>-d</code> >>>   POST data<br>
+  <code>-ignore-body</code> >>>  Do not fetch the response content. (default: false)<br>
+  <code>-r</code> >>>    Follow redirects (default: false)<br>
+  <code>-recursion</code> >>>   Scan recursively. Only FUZZ keyword is supported, and URL (-u) has to end in it. (default: false)<br>
+  <code>-recursion-depth</code> >>>    Maximum recursion depth. (default: 0)<br>
+  <code>-recursion-strategy</code> >>> Recursion strategy: "default" for a redirect based, and "greedy" to recurse on all matches (default: default)<br>
+  <code>-replay-proxy</code> >>>   Replay matched requests using this proxy.<br>
+  <code>-timeout</code> >>>    HTTP request timeout in seconds. (default: 10)<br>
+  <code>-u</code> >>>    Target URL<br>
+  <code>-x </code> >>>   Proxy URL (SOCKS5 or HTTP). For example: http://127.0.0.1:8080 or socks5://127.0.0.1:8080<br>
+<br>
+<i>GENERAL OPTIONS:</i><br>
+  <code>-V</code> >>>   Show version information. (default: false)<br>
+  <code>-ac </code> >>>   Automatically calibrate filtering options (default: false)<br>
+  <code>-acc  </code> >>>  Custom auto-calibration string. Can be used multiple times. Implies -ac<br>
+  <code>-c  </code> >>>    Colorize output. (default: false)<br>
+  <code>-config  </code> >>>   Load configuration from a file<br>
+  <code>-maxtime  </code> >>>  Maximum running time in seconds for entire process. (default: 0)<br>
+  <code>-maxtime-job </code> >>> Maximum running time in seconds per job. (default: 0)<br>
+  <code>-p   </code> >>>   Seconds of `delay` between requests, or a range of random delay. For example "0.1" or "0.1-2.0"<br>
+  <code>-rate </code> >>>  Rate of requests per second (default: 0)<br>
+  <code>-s   </code> >>>   Do not print additional information (silent mode) (default: false)<br>
+  <code>-sa   </code> >>>  Stop on all error cases. Implies -sf and -se. (default: false)<br>
+  <code>-se  </code> >>>   Stop on spurious errors (default: false)<br>
+  <code>-sf  </code> >>>   Stop when > 95% of responses return 403 Forbidden (default: false)<br>
+  <code>-t   </code> >>>   Number of concurrent threads. (default: 40)<br>
+  <code>-v   </code> >>>   Verbose output, printing full URL and redirect location (if any) with the results. (default: false)<br>
+<br>
+<i>MATCHER OPTIONS:</i><br>
+  <code>-mc  </code> >>>  Match HTTP status codes, or "all" for everything. (default: 200,204,301,302,307,401,403,405)<br>
+  <code>-ml  </code> >>>  Match amount of lines in response<br>
+  <code>-mr  </code> >>>  Match regexp<br>
+  <code>-ms  </code> >>>  Match HTTP response size<br>
+  <code>-mw  </code> >>>  Match amount of words in response<br>
+<br>
+<i>FILTER OPTIONS:</i><br>
+  <code>-fc </code> >>>   Filter HTTP status codes from response. Comma separated list of codes and ranges<br>
+  <code>-fl </code> >>>  Filter by amount of lines in response. Comma separated list of line counts and ranges<br>
+  <code>-fr </code> >>>  Filter regexp<br>
+  <code>-fs </code> >>> Filter HTTP response size. Comma separated list of sizes and ranges<br>
+  <code>-fw </code> >>> Filter by amount of words in response. Comma separated list of word counts and ranges<br>
+<br>
+<i>INPUT OPTIONS:</i><br>
+  <code>-D    </code> >>>    DirSearch wordlist compatibility mode. Used in conjunction with -e flag. (default: false)<br>
+  <code>-e    </code> >>>    Comma separated list of extensions. Extends FUZZ keyword.<br>
+  <code>-ic   </code> >>>    Ignore wordlist comments (default: false)<br>
+  <code>-input-cmd  </code> >>>    Command producing the input. --input-num is required when using this input method. Overrides -w.<br>
+  <code>-input-num  </code> >>>    Number of inputs to test. Used in conjunction with --input-cmd. (default: 100)<br>
+  <code>-input-shell </code> >>>   Shell to be used for running command<br>
+  <code>-mode      </code> >>>     Multi-wordlist operation mode. Available modes: clusterbomb, pitchfork (default: clusterbomb)<br>
+  <code>-request    </code> >>>    File containing the raw http request<br>
+  <code>-request-proto</code> >>>  Protocol to use along with raw request (default: https)<br>
+  <code>-w  </code> >>>   Wordlist file path and (optional) keyword separated by colon. eg. '/path/to/wordlist:KEYWORD'<br>
+<br>
+<i>OUTPUT OPTIONS:</i><br>
+  <code>-debug-log </code> >>>  Write all of the internal logging to the specified file.<br>
+  <code>-o </code> >>>   Write output to file<br>
+  <code>-od</code> >>>  Directory path to store matched results to.<br>
+  <code>-of</code> >>>  Output file format. Available formats: json, ejson, html, md, csv, ecsv (or, 'all' for all formats) (default: json)<br>
+  <code>-or</code> >>>   Don't create the output file if we don't have results (default: false)<br>
+<br>		
+At a minimum we're required to supply two options: -u to specify an URL and -w to specify a wordlist. The default keyword FUZZ is used to tell ffuf where the wordlist entries will be injected. We can append it to the end of the URL like so:<br>
+<code>ffuf -u http://MACHINE_IP/FUZZ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/big.txt</code><br>
+<br>
+You could also use any custom keyword instead of FUZZ, you just need to define it like this wordlist.txt:KEYWORD<br>
+<code>ffuf -u http://10.114.187.46/NORAJ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/big.txt:NORAJ</code><br>
+</p>
+        <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="dir">Directory and File Enumeration</h2> 
+<p>One approach you could take would be to start enumerating with a generic list of files such as raft-medium-files-lowercase.txt.<br>
+<b> Comando base per files enumeration "C1" = </b><br>
+<code>ffuf -u http://10.114.187.46/FUZZ -w /usr/share/seclists/Discovery/Web-Content/raft-medium-files-lowercase.txt</code> 
+ <br> <b>N.B:</b> However, using a large generic wordlist containing irrelevant file extensions is not very efficient.<br>
+ <br>
+<b> Comando per files enum con le estensioni nella lista "C2" = </b><br>
+<code>ffuf -u http://10.114.187.46/indexFUZZ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/web-extensions.txt</code>
+<br> Estensioni disponibili: <code>head /usr/share/wordlists/SecLists/Discovery/Web-Content/web-extensions.txt</code> .asp ,.aspx,.bat,.c,.cfm,.cgi,.css,.com,.dll,.exe                                                            
+<br><br>
+<b> Comando per files enum con estensione .php e .txt "C3" </b><br>
+<code> ffuf -u http://10.114.187.46/FUZZ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/raft-medium-words-lowercase.txt -e .php,.txt</code>
+<br><br>
+<b>Comando per directories enum. "C4" </b> <br>
+<code>ffuf -u http://10.114.187.46/FUZZ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/raft-medium-directories-lowercase.txt</code><br>
+<br>
+</p>	
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="filters">Using Filters</h2> 
+<p>
+<b>Comando per nascondere risultati con HTTP STATUS CODES 443 "C1-F1":</b><br>
+<code>ffuf -u http://10.114.187.46/FUZZ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/raft-medium-files-lowercase.txt -fc 403</code>
+<br><br>
+<b>Comando per vedere solo output con HTTP STATUS 200 "C1-F2":</b><br>
+<code>ffuf -u http://10.114.187.46/FUZZ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/raft-medium-files-lowercase.txt -mc 200  </code>
+<br>( si possono usare anche altri status code, tipo 500)<br>
+<br>Here are all filters and matchers:
+<br>
+<i>MATCHER OPTIONS:</i><br>
+  <code>-mc</code> >>>     Match HTTP status codes, or "all" for everything. (default: 200,204,301,302,307,401,403,405)<br>
+  <code>-ml</code> >>>     Match amount of lines in response<br>
+  <code>-mr</code> >>>     Match regexp<br>
+  <code>-ms</code> >>>     Match HTTP response size<br>
+  <code>-mw</code> >>>     Match amount of words in response<br>
+<br>
+<i>FILTER OPTIONS:</i><br>
+  <code>-fc</code> >>>     Filter HTTP status codes from response. Comma separated list of codes and ranges<br>
+  <code>-fl</code> >>>     Filter by amount of lines in response. Comma separated list of line counts and ranges<br>
+  <code>-fr</code> >>>     Filter regexp<br>
+  <code>-fs</code> >>>    Filter HTTP response size. Comma separated list of sizes and ranges<br>
+  <code>-fw</code> >>>    Filter by amount of words in response. Comma separated list of word counts and ranges<br>
+<br>
+<b>IMPORTANTE:</b> We often see there are false positives with files beginning with a dot (eg. .htgroups, .php, etc.). They throw a 403 Forbidden error, however those files don't actually exist. It's tempting to use -fc 403 but this could hide valuable files we don't have access to yet. So instead we can use a regexp to match all files beginning with a dot.<br>
+<br>
+<b>Comando regexp per incontrare tutti i file che cominciano con un . "C3-F3":</b><br>
+<code>ffuf -u http://10.114.187.46/FUZZ -w /usr/share/wordlists/SecLists/Discovery/Web-Content/raft-medium-files-lowercase.txt -fr '/\..*'  </code>
+
+</p>   
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+	<h2 id="fuzz">Fuzzing parameters</h2> 
+<p>What would you do when you find a page or API endpoint but don't know which parameters are accepted? You fuzz!<br>
+Discovering a vulnerable parameter could lead to file inclusion, path disclosure, XSS, SQL injection, or even command injection. Since ffuf allows you to put the keyword anywhere we can use it to fuzz for parameters.<br>
+<b>Comando base per "C1-F4":</b><br>
+<code>$ ffuf -u 'http://MACHINE_IP/sqli-labs/Less-1/?FUZZ=1' -c -w /usr/share/wordlists/SecLists/Discovery/Web-Content/burp-parameter-names.txt -fw 39</code><br>
+<code>$ ffuf -u 'http://MACHINE_IP/sqli-labs/Less-1/?FUZZ=1' -c -w /usr/share/wordlists/SecLists/Discovery/Web-Content/raft-medium-words-lowercase.txt -fw 39</code><br>
+<br>
+-c opzione che significa  Colorize output. (default: false)<br>
+-fw opzione che significa Filter by amount of words in response. Comma separated list of word counts and ranges<br>
+<br>
+Now that we found a parameter accepting integer values we'll start fuzzing values.<br>
+<br>
+At this point, we could generate a wordlist and save a file containing integers. To cut out a step we can use -w - which tells ffuf to read a wordlist from stdout(opens in new tab). This will allow us to generate a list of integers with a command of our choice then pipe the output to ffuf. Below is a list of 5 different ways to generate numbers 0 - 255:<br>
+
+1)<code> $ ruby -e '(0..255).each{|i| puts i}' | ffuf -u 'http://10.114.183.85/sqli-labs/Less-1/?id=FUZZ' -c -w - -fw 33</code><br>
+2)<code> $ ruby -e 'puts (0..255).to_a' | ffuf -u 'http://10.114.183.85/sqli-labs/Less-1/?id=FUZZ' -c -w - -fw 33</code><br>
+<b>3)</b><code> $ for i in {0..255}; do echo $i; done | ffuf -u 'http://10.114.183.85/sqli-labs/Less-1/?id=FUZZ' -c -w - -fw 33</code><br>
+4)<code> $ seq 0 255 | ffuf -u 'http://10.114.183.85/sqli-labs/Less-1/?id=FUZZ' -c -w - -fw 33</code><br>
+5)<code> $ cook '[0-255]' | ffuf -u 'http://10.114.183.85/sqli-labs/Less-1/?id=FUZZ' -c -w - -fw 33</code><br>
+<br>
+We can also use ffuf for wordlist-based brute-force attacks, for example, trying passwords on an authentication page.<br>
+<b>Comando per brute-force attacks "C5": </b> <br>
+<code>﻿$ ffuf -u http://10.114.183.85/sqli-labs/Less-11/ -c -w /usr/share/wordlists/SecLists/Passwords/Leaked-Databases/hak5.txt -X POST -d 'uname=Dummy&passwd=FUZZ&submit=Submit' -fs 1435 -H 'Content-Type: application/x-www-form-urlencoded'</code><br>
+Here we have to use the POST method (specified with -X) and to give the POST data (with -d) where we include the FUZZ keyword in place of the password.<br>
+We also have to specify a custom header -H 'Content-Type: application/x-www-form-urlencoded' because ffuf doesn't set this content-type header automatically as curl does.<br>
+   
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    <hr>
+   <h2 id="vhost">Subdomain and Vhost Enumeration</h2> 
+<p>ffuf may not be as efficient as specialized tools when it comes to subdomain enumeration but it's possible to do.<br>
+<b>Comando Subdomain Enum. :</b><br>
+<code>$ ffuf -u http://FUZZ.mydomain.com -c -w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt</code><br>
+Some subdomains might not be resolvable by the DNS server you're using and are only resolvable from within the target's local network by their private DNS servers. So some virtual hosts (vhosts) may exist with private subdomains so the previous command doesn't find them. To try finding private subdomains we'll have to use the Host HTTP header as these requests might be accepted by the web server.<br>
+Note: virtual hosts(opens in new tab) (vhosts) is the name used by Apache httpd but for Nginx the right term is Server Blocks(opens in new tab).<br>
+<br>
+You could compare the results obtained with direct subdomain enumeration and with vhost enumeration:<br>
+<b>Comando Vhost Enum. :</b><br>
+<code>$ ffuf -u http://FUZZ.mydomain.com -c -w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt -fs 0</code><br>
+<code>$ ffuf -u http://mydomain.com -c -w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt -H 'Host: FUZZ.mydomain.com' -fs 0</code><br>
+
+<br>For example, it is possible that you can't find a sub-domain with direct subdomain enumeration (1st command) but that you can find it with vhost enumeration (2nd command).
+<br>
+Vhost enumeration technique shouldn't be discounted as it may lead to discovering content that wasn't meant to be accessed externally.
+	
+</p>    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>	
+<h2 id="proxi">Proxifying ffuf traffic</h2> 
+<p>
+Whether it's for network pivoting(https://blog.raw.pm/en/state-of-the-art-of-network-pivoting-in-2019/) or for using BurpSuite plugins you can send all the ffuf traffic through a web proxy (HTTP or SOCKS5).<br>
+<code>$ ffuf -u http://MACHINE_IP/FUZZ -c -w /usr/share/wordlists/SecLists/Discovery/Web-Content/common.txt -x http://127.0.0.1:8080</code><br>
+It's also possible to send only matches to your proxy for replaying:<br>
+<code>$ ffuf -u http://MACHINE_IP/FUZZ -c -w /usr/share/wordlists/SecLists/Discovery/Web-Content/common.txt -replay-proxy http://127.0.0.1:8080</code><br>
+This may be useful if you don't need all the traffic to traverse an upstream proxy and want to minimize resource usage or to avoid polluting your proxy history.
+</p>    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>	
+</div></div>
+
+</body>
+</html>

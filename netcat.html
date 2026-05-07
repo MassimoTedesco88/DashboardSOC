@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Netcat</title>
+<meta name="description" content="Netcat">
+    <meta name="author" content="Massimo">
+    <link rel="stylesheet" href="Styles/Styles.css">
+</head>
+<body>
+    <!-- Dashboard iframe -->
+<div class="dashboard">
+    <iframe src="dashboardSOC.html" title="dashboardSOC"></iframe>
+</div>
+<!-- Header titolo -->
+<header>
+    <div class="line"></div>
+    <h3>[NETCAT]</h3>
+</header>
+
+<div class="flex-container">
+    
+        <div id="inizio" class="tools-container">
+                
+        </div>
+<div class="sub-container">  
+<p>Netcat is the most basic tool in a pentester's toolkit when it comes to any kind of networking.<br>
+<h2>Reverse Shells</h2>
+The syntax for starting a netcat listener using Linux is this:<br>
+<code>nc -lvnp port-number</code><br>
+-l is used to tell netcat that this will be a listener<br>
+-v is used to request a verbose output<br>
+-n tells netcat not to resolve host names or use DNS. Explaining this is outwith the scope of the room.<br>
+-p indicates that the port specification will follow.<br>
+<i>Realisticamente potresti utilizzare qualsiasi porta che ti piace, purché non ci sia già un servizio che la utilizza. Tieni presente che se scegli di utilizzare una porta inferiore a 1024, dovrai utilizzarla sudo all'avvio del tuo ascoltatore. Detto questo, è spesso una buona idea utilizzare un numero di porta ben noto (80, 443 o 53 sono buone scelte) poiché è più probabile che questo superi le regole del firewall in uscita sul bersaglio.</i><br>
+<code>sudo nc -lvnp 443</code><br>
+<h2>Bind Shells</h2>
+Se stiamo cercando di ottenere una bindshell su un bersaglio allora possiamo supporre che ci sia già un ascoltatore che ci aspetta su una porta scelta del bersaglio: tutto quello che dobbiamo fare è connetterci ad esso. La sintassi per questo è relativamente semplice:<br>
+<code>nc target-ip chosen-port</code><br>
+Qui stiamo utilizzando netcat per effettuare una connessione in uscita al target sulla porta scelta.<br>
+<hr>
+<h2>Netcat Shell Stabilisation</h2>
+1.Step completato = abbiamo catturato o collegato a una shell netcat<br>
+2. Step = there are many ways to stabilise netcat shells on Linux systems. We'll be looking at three here.<br>
+<h3>Technique 1: Python</h3>
+The first technique we'll be discussing is applicable<b> only to Linux boxes</b>, as they will nearly always have Python installed by default. This is a three stage process:<br>
+1) The first thing to do is use<code> python -c 'import pty;pty.spawn("/bin/bash")'</code>, which uses Python to spawn a better featured bash shell; note that some targets may need the version of Python specified. If this is the case, replace python with python2 or python3 as required. At this point our shell will look a bit prettier, but we still won't be able to use tab autocomplete or the arrow keys, and Ctrl + C will still kill the shell.<br>
+2) Step two is: <code>export TERM=xterm --</code> this will give us access to term commands such as clear.<br>
+3) Finally (and most importantly) we will background the shell using Ctrl + Z. Back in our own terminal we use <code>stty raw -echo; fg</code>. This does two things: first, it turns off our own terminal echo (which gives us access to tab autocompletes, the arrow keys, and Ctrl + C to kill processes). It then foregrounds the shell, thus completing the process.<br>
+<i>Note that if the shell dies, any input in your own terminal will not be visible (as a result of having disabled terminal echo). To fix this, type reset and press enter.</i><br><br>
+<h3>Technique 2: rlwrap</h3>
+rlwrap is a program which, in simple terms, gives us access to history, tab autocompletion and the arrow keys immediately upon receiving a shell; however, some manual stabilisation must still be utilised if you want to be able to use Ctrl + C inside the shell. rlwrap is not installed by default on Kali, so first install it with sudo apt install rlwrap.<br>
+To use rlwrap, we invoke a slightly different listener:<code>rlwrap nc -lvnp port</code><br>
+Prepending our netcat listener with "rlwrap" gives us a much more fully featured shell. This technique is particularly <b>useful when dealing with Windows shells</b>, which are otherwise notoriously difficult to stabilise. When dealing with a Linux target, it's possible to completely stabilise, by using the same trick as in step three of the previous technique: background the shell with Ctrl + Z, then use <code>stty raw -echo; fg</code> to stabilise and re-enter the shell.
+<h3>Technique 3: Socat</h3>
+......
+</p>   
+    
+    <a href="#inizio"  class="button-link">Torna all'indice!</a>
+    
+</div>
+
+</body>
+</html>
